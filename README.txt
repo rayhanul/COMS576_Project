@@ -23,3 +23,7 @@ It will take a few seconds before showing the plot of the configuration space, t
 
 https://gist.github.com/Fnjn/58e5eaa27a3dc004c3526ea82a92de80 
 
+
+
+K-nearest PRM star with constant e  
+

@@ -112,7 +112,7 @@ class Graph:
                 nearest_vertex = vertex
         return nearest_vertex
 
-    def get_nearest_vertices(self, state, k, distance_computator):
+    def get_nearest_vertices(self, state, k, distance_computator, PRM_star=0):
         """Return the ids of k nearest vertices to the given state based on the given distance function
         @type distance_computator: a DistanceComputator object that includes the get_distance(s1, s2)
             function, which returns the distance between s1 and s2.
@@ -121,13 +121,13 @@ class Graph:
         for vertex, s in self.vertices.items():
             dist = distance_computator.get_distance(s, state)
             heappush(dist_vertices, (dist, vertex))
-        a_range=0
-        if k==0:
-            a_range=len(dist_vertices)
-        else : 
-            a_range=min(k, len(dist_vertices))
+        if PRM_star==0:
+            k_range=min(k, len(dist_vertices))
+        else: 
+            k_range=k 
+        print(f"k: {k}")
         nearest_vertices = [
-            dist_vertices[i][1] for i in range(a_range)
+            dist_vertices[i][1] for i in range(k_range)
         ]
         return nearest_vertices
     
