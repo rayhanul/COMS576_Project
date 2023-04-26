@@ -234,11 +234,16 @@ def prm_star(
             return 0
         return math.ceil(k_prm * math.log(number_nodes))
     
+    def get_radius_prm_star():
+
+        return 1.2 
+    
     def add_to_roadmap(G, alpha):
         """Add configuration alpha to the roadmap G"""
         if collision_checker.is_in_collision(alpha):
             return None
-        neighbors = G.get_nearest_vertices(alpha, get_k_prm_star(G), distance_computator,1)
+        # neighbors = G.get_nearest_vertices(alpha, get_k_prm_star(G), distance_computator,1)
+        neighbors = G.near(alpha, get_radius_prm_star(), distance_computator)
         vs = G.add_vertex(alpha)
         for vn in neighbors:
             if G.is_same_component(vn, vs):
