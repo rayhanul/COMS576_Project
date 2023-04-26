@@ -89,6 +89,8 @@ class EdgeStraight(Edge):
 
         # The number of discretized state
         self.num_discretized_states = math.ceil(self.length / step_size) + 1
+        
+        self.parent_cost=0
 
     def reverse(self):
         """Reverse the origin/destination of the edge"""

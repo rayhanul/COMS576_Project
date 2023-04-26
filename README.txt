@@ -19,3 +19,7 @@ For Task 3, run
 $ python hw4.py --alg prm
 
 It will take a few seconds before showing the plot of the configuration space, the roadmap, and the path.
+
+
+https://gist.github.com/Fnjn/58e5eaa27a3dc004c3526ea82a92de80 
+
