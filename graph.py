@@ -44,7 +44,10 @@ class Graph:
 
     def add_edge(self, vid1, vid2, edge):
         """Add an edge from vertex with id vid1 to vertex with id vid2"""
-        self.edges[(vid1, vid2)] = (edge.get_cost(), edge,)
+        self.edges[(vid1, vid2)] = (
+            edge.get_cost(),
+            edge,
+        )
         self.parents[vid2].append(vid1)
 
     def remove_edge(self, edge_id):
@@ -111,18 +114,6 @@ class Graph:
                 nearest_vertex = vertex
         return nearest_vertex
 
-    def near(self, state, radius, distance_computator):
-        dist_vertices = []
-        for vertex, s in self.vertices.items():
-            dist = distance_computator.get_distance(s, state)
-            if dist < radius:
-                heappush(dist_vertices, (dist, vertex))
-
-        nearest_vertices = [
-            item[1] for item in dist_vertices
-        ]
-        return nearest_vertices
-
     def get_nearest_vertices(self, state, k, distance_computator, PRM_star=0):
         """Return the ids of k nearest vertices to the given state based on the given distance function
         @type distance_computator: a DistanceComputator object that includes the get_distance(s1, s2)
@@ -136,6 +127,7 @@ class Graph:
             k_range = min(k, len(dist_vertices))
         else:
             k_range = k
+        print(f"k: {k}")
         nearest_vertices = [
             dist_vertices[i][1] for i in range(k_range)
         ]
@@ -184,7 +176,6 @@ class Graph:
     def get_path(self, root_vertex, goal_vertex):
         """Return a sequence of discretized states from root_vertex to goal_vertex"""
         vertex_path = self.get_vertex_path(root_vertex, goal_vertex)
-        print("vertex_path", vertex_path)
         return self.get_path_from_vertex_path(vertex_path)
 
     def get_path_from_vertex_path(self, vertex_path):
@@ -255,6 +246,40 @@ class Tree(Graph):
             vertex_path.insert(0, v)
         return vertex_path
 
+    def remove_vertex(self, vid):
+        """Remove a vertex with a given id from the graph"""
+
+        # Remove all edges connected to the vertex
+        for edge_id in list(self.edges.keys()):
+            if vid in edge_id:
+                self.remove_edge(edge_id)
+
+        # Remove the vertex from the parents dictionary
+        del self.parents[vid]
+
+        # Remove the vertex from the vertices dictionary
+        del self.vertices[vid]
+
+    def get_edge_cost(self, vid1, vid2):
+        """Get the cost of the edge between vertex with id vid1 and vertex with id vid2"""
+
+        return self.edges[(vid1, vid2)][0]
+
+    def update_edge(self, vid1, vid2, edge):
+        """Update the cost and edge for an existing edge between vertex with id vid1 and vertex with id vid2"""
+
+        self.edges[(vid1, vid2)] = (edge.get_cost(), edge)
+
+    def set_parent(self, vid1, vid2, edge):
+        """Set vid1 as the parent of vid2 in the tree"""
+
+        # Remove the current parent of vid2, if it exists
+        if len(self.parents[vid2]) > 0:
+            self.remove_edge((self.parents[vid2][0], vid2))
+
+        # Add the new edge between vid1 and vid2
+        self.add_edge(vid1, vid2, edge)
+
     def set_vertex_cost(self, vid, cost):
         """Set the cost-to-come for the vertex with id vid"""
         self.vertex_costs[vid] = cost
@@ -264,28 +289,6 @@ class Tree(Graph):
         if vid not in self.vertex_costs:
             return 0.0
         return self.vertex_costs[vid]
-
-    def get_nearby_vertices(self, state, radius, distance_computator):
-        """Return the ids of vertices within radius of the given state based on the given distance function"""
-        nearby_vertices = [
-            vid for vid, s in self.vertices.items() if distance_computator.get_distance(s, state) <= radius
-        ]
-        return nearby_vertices
-
-    def get_vertex_parent(self, vid):
-        """Get the parent of a vertex with id vid"""
-        parents = self.parents.get(vid)
-        if parents:
-            return parents[0]
-        return None
-
-    # def remove_edge(self, edge_id):
-    #     """Remove a given edge
-
-    #     @type edge: a tuple (vid1, vid2) indicating the id of the origin and the destination vertices
-    #     """
-    #     # super().remove_edge(edge_id)
-    #     print("I am not doing anything")
 
 
 class GraphCC(Graph):

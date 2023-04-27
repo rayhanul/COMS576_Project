@@ -116,19 +116,43 @@ def rrt_star(
     pG=0.1,
     numIt=100,
     tol=1e-3,
-    k_nearest=5,
+    k=10,
 ):
+    def rewire(G, vs, distance_computator, edge_creator, collision_checker, k):
+        qs = G.get_vertex_state(vs)
+        vertices = G.get_nearest_vertices(qs, k, distance_computator)
+        for vn in vertices:
+            if vn != vs:
+                qn = G.get_vertex_state(vn)
+                (qe, edge) = stopping_configuration(
+                    qs, qn, edge_creator, collision_checker, tol
+                )
+                if qe is not None and get_euclidean_distance(qn, qe) < tol:
+                    cost_to_come = G.get_vertex_cost(vs) + edge.get_cost()
+                    if cost_to_come < G.get_vertex_cost(vn):
+                        G.set_parent(vs, vn, edge)
+                        G.set_vertex_cost(vn, cost_to_come)
+
+                        # Update cost-to-come of all children of vn
+                        queue = [vn]
+                        while queue:
+                            u = queue.pop(0)
+                            for v in G.parents.keys():
+                                if u in G.parents[v]:
+                                    cost_to_come = G.get_vertex_cost(
+                                        u) + G.get_edge_cost(u, v)
+                                    G.set_vertex_cost(v, cost_to_come)
+                                    queue.append(v)
+
     G = Tree()
     root = G.add_vertex(np.array(qI))
     G.set_vertex_cost(root, 0)
-
     for i in range(numIt):
         use_goal = qG is not None and random.uniform(0, 1) <= pG
         if use_goal:
             alpha = np.array(qG)
         else:
             alpha = sample(cspace)
-
         vn = G.get_nearest(alpha, distance_computator, tol)
         qn = G.get_vertex_state(vn)
         (qs, edge) = stopping_configuration(
@@ -136,37 +160,315 @@ def rrt_star(
         )
         if qs is None or edge is None:
             continue
-
         dist = get_euclidean_distance(qn, qs)
         if dist > tol:
             vs = G.add_vertex(qs)
+            print("vs", vs)
             G.add_edge(vn, vs, edge)
-            G.set_vertex_cost(vs, G.get_vertex_cost(vn) + dist)
-
-            # Rewire the vertices within a certain radius
-            nearest_vertices = G.get_nearest_vertices(
-                qs, k_nearest, distance_computator)
-            for v_near in nearest_vertices:
-                q_near = G.get_vertex_state(v_near)
-                (qs_rewired, edge_rewired) = stopping_configuration(
-                    q_near, qs, edge_creator, collision_checker, tol
-                )
-
-                if qs_rewired is None or edge_rewired is None:
-                    continue
-
-                if np.allclose(qs_rewired, qs):
-                    cost_via_near = G.get_vertex_cost(
-                        v_near) + edge_rewired.get_cost()
-                    if cost_via_near < G.get_vertex_cost(vs):
-                        G.remove_edge((vn, vs))
-                        G.add_edge(v_near, vs, edge_rewired)
-                        G.set_vertex_cost(vs, cost_via_near)
-
+            G.set_vertex_cost(vs, G.get_vertex_cost(vn) + edge.get_cost())
+            rewire(G, vs, distance_computator,
+                   edge_creator, collision_checker, k)
             if use_goal and get_euclidean_distance(qs, qG) < tol:
                 return (G, root, vs)
 
     return (G, root, None)
+
+
+
+
+import math
+import copy
+from heapq import heappush
+from myQueue import QueueAstar
+
+
+class Graph:
+    """A class for maintaining a graph"""
+
+    def __init__(self):
+        # a dictionary whose key = id of the vertex and value = state of the vertex
+        self.vertices = {}
+
+        # a dictionary whose key = id of the vertex and value is the list of the ids of
+        # its parents
+        self.parents = {}
+
+        # a dictionary whose key = (v1, v2) and value = (cost, edge).
+        # v1 is the id of the origin vertex and v2 is the id of the destination vertex.
+        # cost is the cost of the edge.
+        # edge is of type Edge and stores information about the edge, e.g.,
+        # the origin and destination states and the discretized points along the edge
+        self.edges = {}
+
+    def __str__(self):
+        return "vertices: " + str(self.vertices) + " edges: " + str(self.edges)
+
+    def add_vertex(self, state):
+        """Add a vertex at a given state
+
+        @return the id of the added vertex
+        """
+        vid = len(self.vertices)
+        self.vertices[vid] = state
+        self.parents[vid] = []
+        return vid
+
+    def get_vertex_state(self, vid):
+        """Get the state of the vertex with id = vid"""
+        return self.vertices[vid]
+
+    def get_vertices(self):
+        return list(self.vertices.keys())
+
+    def add_edge(self, vid1, vid2, edge):
+        """Add an edge from vertex with id vid1 to vertex with id vid2"""
+        self.edges[(vid1, vid2)] = (
+            edge.get_cost(),
+            edge,
+        )
+        self.parents[vid2].append(vid1)
+
+    def remove_edge(self, edge_id):
+        """Remove a given edge
+
+        @type edge: a tuple (vid1, vid2) indicating the id of the origin and the destination vertices
+        """
+        del self.edges[edge_id]
+        v1 = edge_id[0]
+        v2 = edge_id[1]
+        self.parents[v2].remove(v1)
+
+    def get_nearest(self, state, distance_computator, tol):
+        """Return the vertex in the swath of the graph that is closest to the given state"""
+
+        if len(self.edges) == 0:
+            return self.get_nearest_vertex(state, distance_computator)
+
+        (nearest_edge, nearest_t) = self.get_nearest_edge(
+            state, distance_computator)
+        if nearest_t <= tol:
+            return nearest_edge[0]
+
+        if nearest_t >= 1 - tol:
+            return nearest_edge[1]
+
+        return self.split_edge(nearest_edge, nearest_t)
+
+    def get_nearest_edge(self, state, distance_computator):
+        """Return the edge that is nearest to the given state based on the given distance function
+        @type distance_computator: a DistanceComputator object that includes the get_distance(s1, s2)
+            function, which returns the distance between s1 and s2.
+
+        @return a tuple (nearest_edge, nearest_t) where
+            * nearest_edge is a tuple (vid1, vid2), indicating the id of the origin and the destination vertices
+            * nearest_t is a float in [0, 1], such that the nearest point along the edge to the given state is at
+              distance nearest_t/length where length is the length of nearest_edge
+        """
+        nearest_dist = math.inf
+        nearest_edge = None
+        nearest_t = None
+
+        for edge_id, (cost, edge) in self.edges.items():
+            (sstar, tstar) = edge.get_nearest_point(state)
+            dist = distance_computator.get_distance(sstar, state)
+            if dist < nearest_dist:
+                nearest_dist = dist
+                nearest_edge = edge_id
+                nearest_t = tstar
+
+        return (nearest_edge, nearest_t)
+
+    def get_nearest_vertex(self, state, distance_computator):
+        """Return the id of the nearest vertex to the given state based on the given distance function
+        @type distance_computator: a DistanceComputator object that includes the get_distance(s1, s2)
+            function, which returns the distance between s1 and s2.
+        """
+        nearest_dist = math.inf
+        nearest_vertex = None
+        for vertex, s in self.vertices.items():
+            dist = distance_computator.get_distance(s, state)
+            if dist < nearest_dist:
+                nearest_dist = dist
+                nearest_vertex = vertex
+        return nearest_vertex
+
+    def get_nearest_vertices(self, state, k, distance_computator, PRM_star=0):
+        """Return the ids of k nearest vertices to the given state based on the given distance function
+        @type distance_computator: a DistanceComputator object that includes the get_distance(s1, s2)
+            function, which returns the distance between s1 and s2.
+        """
+        dist_vertices = []
+        for vertex, s in self.vertices.items():
+            dist = distance_computator.get_distance(s, state)
+            heappush(dist_vertices, (dist, vertex))
+        if PRM_star == 0:
+            k_range = min(k, len(dist_vertices))
+        else:
+            k_range = k
+        print(f"k: {k}")
+        nearest_vertices = [
+            dist_vertices[i][1] for i in range(k_range)
+        ]
+        return nearest_vertices
+
+    def split_edge(self, edge_id, t):
+        """Split the given edge at distance t/length where length is the length of the edge
+
+        @return the id of the new vertex at the splitted point
+        """
+        edge = self.edges[edge_id][1]
+        (edge1, edge2) = edge.split(t)
+
+        self.remove_edge(edge_id)
+
+        s = edge1.get_destination()
+        # TODO: Ideally, we should check that edge1.get_destination() == edge2.get_origin()
+        v = self.add_vertex(s)
+        self.add_edge(edge_id[0], v, edge1)
+        self.add_edge(v, edge_id[1], edge2)
+
+        return v
+
+    def get_vertex_path(self, root_vertex, goal_vertex):
+        """Run Dijkstra's algorithm backward to compute the sequence of vertices from root_vertex to goal_vertex"""
+
+        class ZeroCostToGoEstimator:
+            """Cost to go estimator, which always returns 0."""
+
+            def get_lower_bound(self, x):
+                return 0
+
+        Q = QueueAstar(ZeroCostToGoEstimator())
+        Q.insert(goal_vertex, None, 0)
+        while len(Q) > 0:
+            v = Q.pop()
+            if v == root_vertex:
+                vertex_path = Q.get_path(goal_vertex, root_vertex)
+                vertex_path.reverse()
+                return vertex_path
+            for u in self.parents[v]:
+                edge_cost = self.edges[(u, v)][0]
+                Q.insert(u, v, edge_cost)
+        return []
+
+    def get_path(self, root_vertex, goal_vertex):
+        """Return a sequence of discretized states from root_vertex to goal_vertex"""
+        vertex_path = self.get_vertex_path(root_vertex, goal_vertex)
+        return self.get_path_from_vertex_path(vertex_path)
+
+    def get_path_from_vertex_path(self, vertex_path):
+        """Return a sequence of discretized states along the given vertex_path"""
+        if len(vertex_path) == 0:
+            return []
+
+        path = []
+        prev_vertex = vertex_path[0]
+        for curr_ind in range(1, len(vertex_path)):
+            curr_vertex = vertex_path[curr_ind]
+            edge = self.edges[(prev_vertex, curr_vertex)][1]
+            curr_path = edge.get_path()
+            path.extend(curr_path)
+            prev_vertex = curr_vertex
+
+        return path
+
+    def draw(self, ax):
+        """Draw the graph on the axis ax"""
+        for state in self.vertices.values():
+            if (len(state)) == 2:
+                ax.plot(state[0], state[1], "k.", linewidth=5)
+            elif len(state) == 3:
+                ax.plot(
+                    state[0],
+                    state[1],
+                    marker=(3, 0, state[2] * 180 / math.pi - 90),
+                    markersize=8,
+                    linestyle="None",
+                    markerfacecolor="black",
+                    markeredgecolor="black",
+                )
+
+        for (_, edge) in self.edges.values():
+            s2_ind = 1
+            s1 = edge.get_discretized_state(s2_ind - 1)
+            s2 = edge.get_discretized_state(s2_ind)
+            while s2 is not None:
+                ax.plot([s1[0], s2[0]], [s1[1], s2[1]], "k-", linewidth=1)
+                s2_ind = s2_ind + 1
+                s1 = s2
+                s2 = edge.get_discretized_state(s2_ind)
+
+
+class Tree(Graph):
+    """A graph where each vertex has at most one parent"""
+
+    def __init__(self):
+        super().__init__()
+        self.vertex_costs = {}  # Add a dictionary to store the cost-to-come for each vertex
+
+    def add_edge(self, vid1, vid2, edge):
+        """Add an edge from vertex with id vid1 to vertex with id vid2"""
+        # Ensure that a vertex only has at most one parent (this is a tree).
+        assert len(self.parents[vid2]) == 0
+        super().add_edge(vid1, vid2, edge)
+
+    def get_vertex_path(self, root_vertex, goal_vertex):
+        """Trace back parents to return a path from root_vertex to goal_vertex"""
+        vertex_path = [goal_vertex]
+        v = goal_vertex
+        while v != root_vertex:
+            parents = self.parents[v]
+            if len(parents) == 0:
+                return []
+            v = parents[0]
+            vertex_path.insert(0, v)
+        return vertex_path
+
+    def remove_vertex(self, vid):
+        """Remove a vertex with a given id from the graph"""
+
+        # Remove all edges connected to the vertex
+        for edge_id in list(self.edges.keys()):
+            if vid in edge_id:
+                self.remove_edge(edge_id)
+
+        # Remove the vertex from the parents dictionary
+        del self.parents[vid]
+
+        # Remove the vertex from the vertices dictionary
+        del self.vertices[vid]
+
+    def get_edge_cost(self, vid1, vid2):
+        """Get the cost of the edge between vertex with id vid1 and vertex with id vid2"""
+
+        return self.edges[(vid1, vid2)][0]
+
+    def update_edge(self, vid1, vid2, edge):
+        """Update the cost and edge for an existing edge between vertex with id vid1 and vertex with id vid2"""
+
+        self.edges[(vid1, vid2)] = (edge.get_cost(), edge)
+
+    def set_parent(self, vid1, vid2, edge):
+        """Set vid1 as the parent of vid2 in the tree"""
+
+        # Remove the current parent of vid2, if it exists
+        if len(self.parents[vid2]) > 0:
+            self.remove_edge((self.parents[vid2][0], vid2))
+
+        # Add the new edge between vid1 and vid2
+        self.add_edge(vid1, vid2, edge)
+
+    def set_vertex_cost(self, vid, cost):
+        """Set the cost-to-come for the vertex with id vid"""
+        self.vertex_costs[vid] = cost
+
+    def get_vertex_cost(self, vid):
+        """Set the cost-to-come for the vertex with id vid"""
+        if vid not in self.vertex_costs:
+            return 0.0
+        return self.vertex_costs[vid]
+
+
 
 
 main_rrt_star(
@@ -178,3 +480,6 @@ main_rrt_star(
             collision_checker,
             obs_boundaries,
         )
+
+
+

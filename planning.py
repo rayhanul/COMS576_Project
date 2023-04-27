@@ -154,19 +154,43 @@ def rrt_star(
     pG=0.1,
     numIt=100,
     tol=1e-3,
-    k_nearest=5,
+    k=10,
 ):
+    def rewire(G, vs, distance_computator, edge_creator, collision_checker, k):
+        qs = G.get_vertex_state(vs)
+        vertices = G.get_nearest_vertices(qs, k, distance_computator)
+        for vn in vertices:
+            if vn != vs:
+                qn = G.get_vertex_state(vn)
+                (qe, edge) = stopping_configuration(
+                    qs, qn, edge_creator, collision_checker, tol
+                )
+                if qe is not None and get_euclidean_distance(qn, qe) < tol:
+                    cost_to_come = G.get_vertex_cost(vs) + edge.get_cost()
+                    if cost_to_come < G.get_vertex_cost(vn):
+                        G.set_parent(vs, vn, edge)
+                        G.set_vertex_cost(vn, cost_to_come)
+
+                        # Update cost-to-come of all children of vn
+                        queue = [vn]
+                        while queue:
+                            u = queue.pop(0)
+                            for v in G.parents.keys():
+                                if u in G.parents[v]:
+                                    cost_to_come = G.get_vertex_cost(
+                                        u) + G.get_edge_cost(u, v)
+                                    G.set_vertex_cost(v, cost_to_come)
+                                    queue.append(v)
+
     G = Tree()
     root = G.add_vertex(np.array(qI))
     G.set_vertex_cost(root, 0)
-
     for i in range(numIt):
         use_goal = qG is not None and random.uniform(0, 1) <= pG
         if use_goal:
             alpha = np.array(qG)
         else:
             alpha = sample(cspace)
-
         vn = G.get_nearest(alpha, distance_computator, tol)
         qn = G.get_vertex_state(vn)
         (qs, edge) = stopping_configuration(
@@ -174,46 +198,14 @@ def rrt_star(
         )
         if qs is None or edge is None:
             continue
-
         dist = get_euclidean_distance(qn, qs)
         if dist > tol:
             vs = G.add_vertex(qs)
+            print("vs", vs)
             G.add_edge(vn, vs, edge)
-            G.set_vertex_cost(vs, G.get_vertex_cost(vn) + dist)
-
-            # Rewire the vertices within a certain radius
-            [nearest_vertices,] = G.get_nearest_vertices(
-                qs, k_nearest, distance_computator)
-
-            for v_near in nearest_vertices:
-                q_near = G.get_vertex_state(v_near)
-                (qs_rewired, edge_rewired) = stopping_configuration(
-                    q_near, qs, edge_creator, collision_checker, tol)
-
-                if qs_rewired is None or edge_rewired is None:
-                    continue
-
-                if np.allclose(qs_rewired, qs):
-                    cost_via_near = G.get_vertex_cost(
-                        v_near) + edge_rewired.get_cost()
-                    if cost_via_near < G.get_vertex_cost(vs):
-
-                        print("\nrewiring begins")
-
-                        print(f'nearest vertex: {v_near}')
-                        if (vn, vs) in G.edges.keys():
-                            G.remove_edge((vn, vs))
-                        print(f'removing:{(vn, vs)}')
-                        print(f'parent list of {vn}:{G.parents[vn]}')
-                        print(f'parent list of {vs}:{G.parents[vs]}')
-
-                        # G.parents.update({vs:[]})
-                        G.add_edge(v_near, vs, edge_rewired)
-                        print(f'adding edge:{(v_near, vs)}')
-
-                        G.set_vertex_cost(vs, cost_via_near)
-                        print("rewiring ends\n")
-
+            G.set_vertex_cost(vs, G.get_vertex_cost(vn) + edge.get_cost())
+            rewire(G, vs, distance_computator,
+                   edge_creator, collision_checker, k)
             if use_goal and get_euclidean_distance(qs, qG) < tol:
                 return (G, root, vs)
 
