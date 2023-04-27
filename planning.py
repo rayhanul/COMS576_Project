@@ -201,7 +201,7 @@ def rrt_star(
         dist = get_euclidean_distance(qn, qs)
         if dist > tol:
             vs = G.add_vertex(qs)
-            print("vs", vs)
+            # print("vs", vs)
             G.add_edge(vn, vs, edge)
             G.set_vertex_cost(vs, G.get_vertex_cost(vn) + edge.get_cost())
             rewire(G, vs, distance_computator,
@@ -224,7 +224,7 @@ def rrt_sharp(
     tol=1e-3,
     k=10,
 ):
-    print("inside sharp")
+    # print("inside sharp")
 
     def rewire(G, vs, distance_computator, edge_creator, collision_checker, k):
         qs = G.get_vertex_state(vs)
@@ -273,7 +273,7 @@ def rrt_sharp(
         if dist > tol:
             vs = G.add_vertex(qs)
             num_vertices += 1
-            print("vs", vs)
+            # print("vs", vs)
             G.add_edge(vn, vs, edge)
             G.set_vertex_cost(vs, G.get_vertex_cost(vn) + edge.get_cost())
 

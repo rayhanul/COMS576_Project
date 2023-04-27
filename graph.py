@@ -99,6 +99,18 @@ class Graph:
                 nearest_t = tstar
 
         return (nearest_edge, nearest_t)
+    
+    def near(self, state, radius, distance_computator):
+        dist_vertices = []
+        for vertex, s in self.vertices.items():
+            dist = distance_computator.get_distance(s, state)
+            if dist < radius:
+                heappush(dist_vertices, (dist, vertex))
+
+        nearest_vertices = [
+            item[1] for item in dist_vertices
+        ]
+        return nearest_vertices
 
     def get_nearest_vertex(self, state, distance_computator):
         """Return the id of the nearest vertex to the given state based on the given distance function
@@ -127,7 +139,6 @@ class Graph:
             k_range = min(k, len(dist_vertices))
         else:
             k_range = k
-        print(f"k: {k}")
         nearest_vertices = [
             dist_vertices[i][1] for i in range(k_range)
         ]
