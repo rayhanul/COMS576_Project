@@ -1,4 +1,5 @@
-import math, copy
+import math
+import copy
 from heapq import heappush
 from myQueue import QueueAstar
 
@@ -43,7 +44,7 @@ class Graph:
 
     def add_edge(self, vid1, vid2, edge):
         """Add an edge from vertex with id vid1 to vertex with id vid2"""
-        self.edges[(vid1, vid2)] = (edge.get_cost(),edge,)
+        self.edges[(vid1, vid2)] = (edge.get_cost(), edge,)
         self.parents[vid2].append(vid1)
 
     def remove_edge(self, edge_id):
@@ -62,7 +63,8 @@ class Graph:
         if len(self.edges) == 0:
             return self.get_nearest_vertex(state, distance_computator)
 
-        (nearest_edge, nearest_t) = self.get_nearest_edge(state, distance_computator)
+        (nearest_edge, nearest_t) = self.get_nearest_edge(
+            state, distance_computator)
         if nearest_t <= tol:
             return nearest_edge[0]
 
@@ -108,19 +110,19 @@ class Graph:
                 nearest_dist = dist
                 nearest_vertex = vertex
         return nearest_vertex
-    
+
     def near(self, state, radius, distance_computator):
         dist_vertices = []
         for vertex, s in self.vertices.items():
             dist = distance_computator.get_distance(s, state)
             if dist < radius:
                 heappush(dist_vertices, (dist, vertex))
-        
+
         nearest_vertices = [
             item[1] for item in dist_vertices
         ]
         return nearest_vertices
-    
+
     def get_nearest_vertices(self, state, k, distance_computator, PRM_star=0):
         """Return the ids of k nearest vertices to the given state based on the given distance function
         @type distance_computator: a DistanceComputator object that includes the get_distance(s1, s2)
@@ -130,15 +132,15 @@ class Graph:
         for vertex, s in self.vertices.items():
             dist = distance_computator.get_distance(s, state)
             heappush(dist_vertices, (dist, vertex))
-        if PRM_star==0:
-            k_range=min(k, len(dist_vertices))
-        else: 
-            k_range=k 
+        if PRM_star == 0:
+            k_range = min(k, len(dist_vertices))
+        else:
+            k_range = k
         nearest_vertices = [
             dist_vertices[i][1] for i in range(k_range)
         ]
         return nearest_vertices
-    
+
     def split_edge(self, edge_id, t):
         """Split the given edge at distance t/length where length is the length of the edge
 
@@ -182,6 +184,7 @@ class Graph:
     def get_path(self, root_vertex, goal_vertex):
         """Return a sequence of discretized states from root_vertex to goal_vertex"""
         vertex_path = self.get_vertex_path(root_vertex, goal_vertex)
+        print("vertex_path", vertex_path)
         return self.get_path_from_vertex_path(vertex_path)
 
     def get_path_from_vertex_path(self, vertex_path):
@@ -283,7 +286,6 @@ class Tree(Graph):
     #     """
     #     # super().remove_edge(edge_id)
     #     print("I am not doing anything")
-
 
 
 class GraphCC(Graph):

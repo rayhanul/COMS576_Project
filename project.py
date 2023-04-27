@@ -7,6 +7,7 @@ from planning import (
     rrt_star,
     prm,
     prm_star,
+    prm_star_new,
     StraightEdgeCreator,
     EuclideanDistanceComputator,
     EmptyCollisionChecker,
@@ -111,13 +112,14 @@ def main_prm(
     path = []
     if root is not None and goal is not None:
         path = G.get_path(root, goal)
+        print(path)
     draw(ax, cspace, obs_boundaries, qI, qG, G, path, title)
     plt.show()
 
 
 if __name__ == "__main__":
     # python hw4.py --alg rrt
-    sys.argv = [os.path.basename(__file__), '--alg', 'rrt']
+    sys.argv = [os.path.basename(__file__), '--alg', 'prm']
 
     cspace = [(-3, 3), (-1, 1)]
     qI = (-2, -0.5)

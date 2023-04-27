@@ -3,11 +3,13 @@ import numpy as np
 from graph import Tree, GraphCC
 from edge import EdgeStraight
 from geometry import get_euclidean_distance
-import math 
+import math
 
 ##############################################################################
 # Classes for creating an edge
 ##############################################################################
+
+
 class EdgeCreator:
     def make_edge(self, s1, s2):
         """Return an Edge object beginning at state s1 and ending at state s2"""
@@ -141,6 +143,7 @@ def rrt(
 
     return (G, root, None)
 
+
 def rrt_star(
     cspace,
     qI,
@@ -179,31 +182,32 @@ def rrt_star(
             G.set_vertex_cost(vs, G.get_vertex_cost(vn) + dist)
 
             # Rewire the vertices within a certain radius
-            nearest_vertices = G.get_nearest_vertices(qs, k_nearest, distance_computator)
-            
+            [nearest_vertices,] = G.get_nearest_vertices(
+                qs, k_nearest, distance_computator)
+
             for v_near in nearest_vertices:
                 q_near = G.get_vertex_state(v_near)
-                (qs_rewired, edge_rewired) = stopping_configuration(q_near, qs, edge_creator, collision_checker, tol)
+                (qs_rewired, edge_rewired) = stopping_configuration(
+                    q_near, qs, edge_creator, collision_checker, tol)
 
                 if qs_rewired is None or edge_rewired is None:
                     continue
 
                 if np.allclose(qs_rewired, qs):
-                    cost_via_near = G.get_vertex_cost(v_near) + edge_rewired.get_cost()
+                    cost_via_near = G.get_vertex_cost(
+                        v_near) + edge_rewired.get_cost()
                     if cost_via_near < G.get_vertex_cost(vs):
 
                         print("\nrewiring begins")
 
                         print(f'nearest vertex: {v_near}')
-                        if (vn,vs) in G.edges.keys():
+                        if (vn, vs) in G.edges.keys():
                             G.remove_edge((vn, vs))
                         print(f'removing:{(vn, vs)}')
                         print(f'parent list of {vn}:{G.parents[vn]}')
                         print(f'parent list of {vs}:{G.parents[vs]}')
-                        
-                        
-                        
-                        G.parents.update({vs:[]})
+
+                        # G.parents.update({vs:[]})
                         G.add_edge(v_near, vs, edge_rewired)
                         print(f'adding edge:{(v_near, vs)}')
 
@@ -215,6 +219,7 @@ def rrt_star(
 
     return (G, root, None)
 
+
 def prm_star(
     cspace,
     qI,
@@ -224,7 +229,8 @@ def prm_star(
     collision_checker,
     numIt=1000,
     tol=1e-3,
-    d=2
+    d=2,
+    gamma_prm=1.0
 ):
     """PRM with obstacles
 
@@ -245,23 +251,79 @@ def prm_star(
         and goal is the id of the goal vertex.
         If the root (resp. goal) vertex does not exist in the roadmap, root (resp. goal) will be None.
     """
-    def get_k_prm_star(G,e=1, d=2):
-        number_nodes=len(G.vertices)
+    def get_k_prm_star(G, e=1, d=2):
+        number_nodes = len(G.vertices)
         k_prm = e * 2
-        if number_nodes==0:
+        if number_nodes == 0:
             return 0
         return math.ceil(k_prm * math.log(number_nodes))
-    
-    def get_radius_prm_star():
 
-        return 1.2 
-    
+    def get_radius_prm_star(n, d, gamma_prm):
+        n = n
+        # print("value of n", n)
+        return gamma_prm * (math.log(n) / n) ** (1 / d)
+
     def add_to_roadmap(G, alpha):
         """Add configuration alpha to the roadmap G"""
         if collision_checker.is_in_collision(alpha):
             return None
         # neighbors = G.get_nearest_vertices(alpha, get_k_prm_star(G), distance_computator,1)
-        neighbors = G.near(alpha, get_radius_prm_star(), distance_computator)
+        neighbors = G.near(alpha, get_radius_prm_star(
+            len(G.vertices)+1, d, gamma_prm), distance_computator)
+        vs = G.add_vertex(alpha)
+        for vn in neighbors:
+            if G.is_same_component(vn, vs):
+                continue
+            qn = G.get_vertex_state(vn)
+            if connect(alpha, qn, edge_creator, collision_checker, tol) and connect(
+                qn, alpha, edge_creator, collision_checker, tol
+            ):
+                G.add_edge(vs, vn, edge_creator.make_edge(alpha, qn))
+        return vs
+
+    G = GraphCC()
+    i = 0
+    while i < numIt:
+        alpha = sample(cspace)
+        if add_to_roadmap(G, alpha) is not None:
+            i = i + 1
+    root = None
+    if qI is not None:
+        root = add_to_roadmap(G, np.array(qI))
+    goal = None
+    if qG is not None:
+        goal = add_to_roadmap(G, np.array(qG))
+    return (G, root, goal)
+
+
+def prm_star_new(
+    cspace,
+    qI,
+    qG,
+    edge_creator,
+    distance_computator,
+    collision_checker,
+    numIt=1000,
+    tol=1e-3,
+    d=2,
+    gamma_prm=1.0  # Add gamma_prm as an argument, and set its default value
+):
+    def get_radius_prm_star(n, d, gamma_prm):
+        n = n
+        # print("value of n", n)
+        return gamma_prm * (math.log(n) / n) ** (1 / d)
+
+    def add_to_roadmap(G, alpha):
+        """Add configuration alpha to the roadmap G"""
+        if collision_checker.is_in_collision(alpha):
+            return None
+
+        # Call get_radius_prm_star() to get the connection radius based on the current graph G
+        radius = get_radius_prm_star(len(G.vertices)+1, d, gamma_prm)
+
+        # Replace the fixed radius with the calculated radius
+        neighbors = G.near(alpha, radius, distance_computator)
+
         vs = G.add_vertex(alpha)
         for vn in neighbors:
             if G.is_same_component(vn, vs):
@@ -351,7 +413,8 @@ def prm(
 
 def sample(cspace):
     """Return a sample configuration of the C-space based on uniform random sampling"""
-    sample = [random.uniform(cspace_comp[0], cspace_comp[1]) for cspace_comp in cspace]
+    sample = [random.uniform(cspace_comp[0], cspace_comp[1])
+              for cspace_comp in cspace]
     return np.array(sample)
 
 
