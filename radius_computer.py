@@ -1,23 +1,40 @@
-from obstacle import construct_circular_obstacles, WorldBoundary2D
+
 import numpy as np
 import math
 
 
-class radius_computer:
+class Radius_computer:
 
-    import math
+    def __init__(self, cspace, raidus) -> None:
+        self.cspace=cspace
+        self.obstacle_radius = raidus
 
-    def cspace_area(cspace):
-        x_range = cspace[0][1] - cspace[0][0]
-        y_range = cspace[1][1] - cspace[1][0]
+    def cspace_area(self):
+        x_range = self.cspace[0][1] - self.cspace[0][0]
+        y_range = self.cspace[1][1] - self.cspace[1][0]
+
         return x_range * y_range
 
-    def half_circle_area(radius):
-        return 0.5 * math.pi * radius**2
+    def half_circle_area(self):
+        return 0.5 * math.pi * self.obstacle_radius**2
+    
+    def get_mu_x_free(self):
+        return self.cspace_area() - self.half_circle_area()
+    
+    def get_unit_ball_2_dimension(self):
+        '''
+        return the unit ball in 2-dimensional space-which is equal to pi 
+        '''
+        return math.pi 
 
-    import math
+    def get_xi_d(self):
+        return self.get_unit_ball_2_dimension()
 
-    def prm_star_radius(self, n, d, gamma=1, r=float('inf')):
+    def get_gamma_prm(self, mu_xfree, xi_d, d=2):
+
+        return (2*(1+(1/d))**(1/d)) * ((mu_xfree/xi_d)**(1/d))
+    
+    def get_prm_star_radius(self, number_vertices, d=2, gamma_prm=1, r=float('inf')):
         """
         Calculate the radius for PRM*.
 
@@ -27,28 +44,40 @@ class radius_computer:
         :param r: float, constant value (optional)
         :return: float, PRM* radius
         """
-        return min(r, gamma * (math.log(n) / n) ** (1 / d))
 
 
-if __name__ == '__main__':
-    print("This is test")
+        mu_x_free=self.get_mu_x_free()
+        xi_d=self.get_xi_d()
 
-    cspace = [(-3, 3), (-1, 1)]
+        gamma_prm=self.get_gamma_prm(mu_x_free, xi_d, d)
 
-    x = radius_computer()
+        return min(r, gamma_prm * (math.log(number_vertices) / number_vertices) ** (1 / d))
 
-    cspace = [(-3, 3), (-1, 1)]
-    obstacle_radius = 0.98
-    obstacle_center = (0, 0)
+    def get_k_prm_star(self, number_vertices, e=1, d=2):
+        k_prm=2*e 
+        return math.ceil(k_prm * math.log(number_vertices))
 
-    total_area = x.cspace_area(cspace)
-    obstacle_area = x.half_circle_area(obstacle_radius)
-    obstacle_free_area = total_area - obstacle_area
 
-    print("Area of the obstacle-free space:", obstacle_free_area)
-    # Calculate radius for PRM*
-    num_samples = 1000
-    dimension = 2
-    radius = x.prm_star_radius(num_samples, dimension)
+# if __name__ == '__main__':
+#     print("This is test")
 
-print("Radius for PRM*:", radius)
+#     cspace = [(-3, 3), (-1, 1)]
+
+#     x = radius_computer(cspace, 0.98)
+
+#     cspace = [(-3, 3), (-1, 1)]
+    
+#     obstacle_center = (0, 0)
+
+#     total_area = x.cspace_area()
+#     obstacle_area = x.half_circle_area()
+#     obstacle_free_area = total_area - obstacle_area
+
+
+#     # Calculate radius for PRM*
+#     num_samples = 1000
+#     dimension = 2
+#     for i in range(1, 1000):
+#         radius = x.get_prm_star_radius(i)
+#         if i%100==0:
+#             print("Radius for PRM*:", radius)

@@ -16,6 +16,8 @@ from planning import (
 from obstacle import construct_circular_obstacles, WorldBoundary2D
 from draw_cspace import draw
 
+from radius_computer import Radius_computer
+
 ALG_RRT = "rrt"
 ALG_PRM = "prm"
 ALG_PRM_STAR = "prm_star"
@@ -138,6 +140,7 @@ if __name__ == "__main__":
     edge_creator = StraightEdgeCreator(0.1)
     collision_checker = ObstacleCollisionChecker(obstacles)
     distance_computator = EuclideanDistanceComputator()
+    radius_computer=Radius_computer(cspace=cspace, raidus=0.98)
 
     args = parse_args()
 
