@@ -219,6 +219,9 @@ def prm_star(
     edge_creator,
     distance_computator,
     collision_checker,
+    radius_computer,
+    obs_boundaries,
+    k_nearest_prm_star=False,
     numIt=1000,
     tol=1e-3,
     d=2,
@@ -259,9 +262,11 @@ def prm_star(
         """Add configuration alpha to the roadmap G"""
         if collision_checker.is_in_collision(alpha):
             return None
-        # neighbors = G.get_nearest_vertices(alpha, get_k_prm_star(G), distance_computator,1)
-        neighbors = G.near(alpha, get_radius_prm_star(
-            len(G.vertices)+1, d, gamma_prm), distance_computator)
+        
+        if k_nearest_prm_star:
+            neighbors = G.get_nearest_vertices(alpha, radius_computer.get_k_prm_star(len(G.vertices)), distance_computator,1)
+        else:
+            neighbors = G.near(alpha, radius_computer.get_prm_star_radius(len(G.vertices)), distance_computator)
         vs = G.add_vertex(alpha)
         for vn in neighbors:
             if G.is_same_component(vn, vs):

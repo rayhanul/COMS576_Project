@@ -16,6 +16,8 @@ from planning import (
 from obstacle import construct_circular_obstacles, WorldBoundary2D
 from draw_cspace import draw
 
+from radius_computer import Radius_computer
+
 ALG_RRT = "rrt"
 ALG_PRM = "prm"
 ALG_PRM_STAR = "prm_star"
@@ -87,7 +89,7 @@ def main_rrt(
 
 
 def main_prm(
-    cspace, qI, qG, edge_creator, distance_computator, collision_checker, obs_boundaries
+    cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, obs_boundaries,k_nearest_prm_star
 ):
     """Task 3 (Solve the planning problem using PRM)"""
     fig, ax = plt.subplots()
@@ -107,7 +109,10 @@ def main_prm(
         qG=qG,
         edge_creator=edge_creator,
         distance_computator=distance_computator,
-        collision_checker=collision_checker
+        collision_checker=collision_checker,
+        radius_computer=radius_computer,
+        obs_boundaries=obs_boundaries,
+        k_nearest_prm_star=k_nearest_prm_star 
     )
     path = []
     if root is not None and goal is not None:
@@ -138,6 +143,7 @@ if __name__ == "__main__":
     edge_creator = StraightEdgeCreator(0.1)
     collision_checker = ObstacleCollisionChecker(obstacles)
     distance_computator = EuclideanDistanceComputator()
+    radius_computer=Radius_computer(cspace=cspace, raidus=0.98)
 
     args = parse_args()
 
@@ -159,5 +165,8 @@ if __name__ == "__main__":
             edge_creator,
             distance_computator,
             collision_checker,
-            obs_boundaries,
+            radius_computer,
+            obs_boundaries, 
+            k_nearest_prm_star=False 
+            
         )
