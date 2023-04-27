@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from planning import (
     rrt,
     rrt_star,
+    rrt_sharp,
     prm,
     prm_star,
     prm_star_new,
@@ -72,7 +73,7 @@ def main_rrt(
 
     # Task 2: Include obstacles and goal
     title3 = "RRT planning"
-    (G3, root3, goal3) = rrt_star(
+    (G3, root3, goal3) = rrt_sharp(
         cspace=cspace,
         qI=qI,
         qG=qG,
@@ -89,7 +90,7 @@ def main_rrt(
 
 
 def main_prm(
-    cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, obs_boundaries,k_nearest_prm_star
+    cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, obs_boundaries, k_nearest_prm_star
 ):
     """Task 3 (Solve the planning problem using PRM)"""
     fig, ax = plt.subplots()
@@ -112,7 +113,7 @@ def main_prm(
         collision_checker=collision_checker,
         radius_computer=radius_computer,
         obs_boundaries=obs_boundaries,
-        k_nearest_prm_star=k_nearest_prm_star 
+        k_nearest_prm_star=k_nearest_prm_star
     )
     path = []
     if root is not None and goal is not None:
@@ -143,7 +144,7 @@ if __name__ == "__main__":
     edge_creator = StraightEdgeCreator(0.1)
     collision_checker = ObstacleCollisionChecker(obstacles)
     distance_computator = EuclideanDistanceComputator()
-    radius_computer=Radius_computer(cspace=cspace, raidus=0.98)
+    radius_computer = Radius_computer(cspace=cspace, raidus=0.98)
 
     args = parse_args()
 
@@ -166,7 +167,7 @@ if __name__ == "__main__":
             distance_computator,
             collision_checker,
             radius_computer,
-            obs_boundaries, 
-            k_nearest_prm_star=False 
-            
+            obs_boundaries,
+            k_nearest_prm_star=False
+
         )

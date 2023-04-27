@@ -212,6 +212,81 @@ def rrt_star(
     return (G, root, None)
 
 
+def rrt_sharp(
+    cspace,
+    qI,
+    qG,
+    edge_creator,
+    distance_computator,
+    collision_checker,
+    pG=0.1,
+    numIt=100,
+    tol=1e-3,
+    k=10,
+):
+    print("inside sharp")
+
+    def rewire(G, vs, distance_computator, edge_creator, collision_checker, k):
+        qs = G.get_vertex_state(vs)
+        vertices = G.get_nearest_vertices(qs, k, distance_computator)
+        for vn in vertices:
+            if vn != vs:
+                qn = G.get_vertex_state(vn)
+                (qe, edge) = stopping_configuration(
+                    qs, qn, edge_creator, collision_checker, tol
+                )
+                if qe is not None and get_euclidean_distance(qn, qe) < tol:
+                    cost_to_come = G.get_vertex_cost(vs) + edge.get_cost()
+                    if cost_to_come < G.get_vertex_cost(vn):
+                        G.set_parent(vs, vn, edge)
+                        G.set_vertex_cost(vn, cost_to_come)
+
+                        # Update cost-to-come of all children of vn
+                        queue = [vn]
+                        while queue:
+                            u = queue.pop(0)
+                            for v in G.parents.keys():
+                                if u in G.parents[v]:
+                                    cost_to_come = G.get_vertex_cost(
+                                        u) + G.get_edge_cost(u, v)
+                                    G.set_vertex_cost(v, cost_to_come)
+                                    queue.append(v)
+
+    G = Tree()
+    root = G.add_vertex(np.array(qI))
+    G.set_vertex_cost(root, 0)
+    num_vertices = 1
+    for i in range(numIt):
+        use_goal = qG is not None and random.uniform(0, 1) <= pG
+        if use_goal:
+            alpha = np.array(qG)
+        else:
+            alpha = sample(cspace)
+        vn = G.get_nearest(alpha, distance_computator, tol)
+        qn = G.get_vertex_state(vn)
+        (qs, edge) = stopping_configuration(
+            qn, alpha, edge_creator, collision_checker, tol
+        )
+        if qs is None or edge is None:
+            continue
+        dist = get_euclidean_distance(qn, qs)
+        if dist > tol:
+            vs = G.add_vertex(qs)
+            num_vertices += 1
+            print("vs", vs)
+            G.add_edge(vn, vs, edge)
+            G.set_vertex_cost(vs, G.get_vertex_cost(vn) + edge.get_cost())
+
+            # Determine k for rewiring based on the number of vertices
+            k = min(k, num_vertices)
+            rewire(G, vs, distance_computator,
+                   edge_creator, collision_checker, k)
+            if use_goal and get_euclidean_distance(qs, qG) < tol:
+                return (G, root, vs)
+
+    return (G, root, None)
+
+
 def prm_star(
     cspace,
     qI,
@@ -262,11 +337,13 @@ def prm_star(
         """Add configuration alpha to the roadmap G"""
         if collision_checker.is_in_collision(alpha):
             return None
-        
+
         if k_nearest_prm_star:
-            neighbors = G.get_nearest_vertices(alpha, radius_computer.get_k_prm_star(len(G.vertices)), distance_computator,1)
+            neighbors = G.get_nearest_vertices(
+                alpha, radius_computer.get_k_prm_star(len(G.vertices)), distance_computator, 1)
         else:
-            neighbors = G.near(alpha, radius_computer.get_prm_star_radius(len(G.vertices)), distance_computator)
+            neighbors = G.near(alpha, radius_computer.get_prm_star_radius(
+                len(G.vertices)), distance_computator)
         vs = G.add_vertex(alpha)
         for vn in neighbors:
             if G.is_same_component(vn, vs):
