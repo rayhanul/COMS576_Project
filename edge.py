@@ -86,7 +86,10 @@ class EdgeStraight(Edge):
             self.s1, self.s2
         )  # the length of this line segment
         # for discretization purpose
-        self.tstep = min(step_size / self.length, 1)
+        if self.length==0:
+            self.tstep = min(step_size , 1)
+        else : 
+            self.tstep = min(step_size / self.length, 1)
 
         # The number of discretized state
         self.num_discretized_states = math.ceil(self.length / step_size) + 1

@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as plt
 from planning import (
     rrt,
+    rrt_star,
     prm,
     prm_star,
     StraightEdgeCreator,
@@ -68,7 +69,7 @@ def main_rrt(
 
     # Task 2: Include obstacles and goal
     title3 = "RRT planning"
-    (G3, root3, goal3) = rrt(
+    (G3, root3, goal3) = rrt_star(
         cspace=cspace,
         qI=qI,
         qG=qG,
@@ -116,7 +117,7 @@ def main_prm(
 
 if __name__ == "__main__":
     # python hw4.py --alg rrt
-    sys.argv = [os.path.basename(__file__), '--alg', 'prm']
+    sys.argv = [os.path.basename(__file__), '--alg', 'rrt']
 
     cspace = [(-3, 3), (-1, 1)]
     qI = (-2, -0.5)
