@@ -85,8 +85,8 @@ class EdgeStraight(Edge):
         self.length = get_euclidean_distance(
             self.s1, self.s2
         )  # the length of this line segment
-        self.tstep = min(step_size / (self.length + 1e-6),
-                         1)  # for discretization purpose
+        # for discretization purpose
+        self.tstep = min(step_size / self.length, 1)
 
         # The number of discretized state
         self.num_discretized_states = math.ceil(self.length / step_size) + 1

@@ -251,10 +251,8 @@ class Tree(Graph):
         self.vertex_costs[vid] = cost
 
     def get_vertex_cost(self, vid):
-        """Set the cost-to-come for the vertex with id vid"""
-        if vid not in self.vertex_costs:
-            return 0.0
-        return self.vertex_costs[vid]
+        """Get the cost-to-come for the vertex with id vid"""
+        return self.vertex_costs.get(vid, None)
 
     def get_nearby_vertices(self, state, radius, distance_computator):
         """Return the ids of vertices within radius of the given state based on the given distance function"""

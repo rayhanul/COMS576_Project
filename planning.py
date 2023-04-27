@@ -154,7 +154,7 @@ def rrt_star(
     pG=0.1,
     numIt=100,
     tol=1e-3,
-    k_nearest=5,
+    search_radius=1.0,
 ):
     G = Tree()
     root = G.add_vertex(np.array(qI))
@@ -172,34 +172,48 @@ def rrt_star(
         (qs, edge) = stopping_configuration(
             qn, alpha, edge_creator, collision_checker, tol
         )
+
         if qs is None or edge is None:
             continue
 
         dist = get_euclidean_distance(qn, qs)
         if dist > tol:
-            vs = G.add_vertex(qs)
-            G.add_edge(vn, vs, edge)
-            G.set_vertex_cost(vs, G.get_vertex_cost(vn) + dist)
+            nearby_vertices = G.get_nearby_vertices(
+                qs, search_radius, distance_computator)
 
-            # Rewire the vertices within a certain radius
-            nearest_vertices = G.get_nearest_vertices(
-                qs, k_nearest, distance_computator)
-            for v_near in nearest_vertices:
+            # Find the lowest cost-to-come vertex to reach the new vertex
+            min_cost_vertex = vn
+            min_cost = G.get_vertex_cost(vn) + dist
+            for v_near in nearby_vertices:
                 q_near = G.get_vertex_state(v_near)
-                (qs_rewired, edge_rewired) = stopping_configuration(
-                    q_near, qs, edge_creator, collision_checker, tol
-                )
+                cost = G.get_vertex_cost(
+                    v_near) + get_euclidean_distance(q_near, qs)
+                if cost < min_cost:
+                    min_cost = cost
+                    min_cost_vertex = v_near
 
-                if qs_rewired is None or edge_rewired is None:
-                    continue
+            # Add the new vertex and edge with the lowest cost-to-come
+            vs = G.add_vertex(qs)
+            G.set_vertex_cost(vs, min_cost)
+            q_min_cost = G.get_vertex_state(min_cost_vertex)
+            (_, min_cost_edge) = stopping_configuration(
+                q_min_cost, qs, edge_creator, collision_checker, tol
+            )
+            G.add_edge(min_cost_vertex, vs, min_cost_edge)
 
-                if np.allclose(qs_rewired, qs):
-                    cost_via_near = G.get_vertex_cost(
-                        v_near) + edge_rewired.get_cost()
-                    if cost_via_near < G.get_vertex_cost(vs):
-                        G.remove_edge((vn, vs))
-                        G.add_edge(v_near, vs, edge_rewired)
-                        G.set_vertex_cost(vs, cost_via_near)
+            # Rewire nearby vertices if the new vertex provides a lower cost-to-come
+            for v_near in nearby_vertices:
+                q_near = G.get_vertex_state(v_near)
+                cost_through_vs = G.get_vertex_cost(
+                    vs) + get_euclidean_distance(qs, q_near)
+                if cost_through_vs < G.get_vertex_cost(v_near):
+                    v_parent = G.get_vertex_parent(v_near)
+                    G.remove_edge(v_parent, v_near)
+                    (_, edge_near) = stopping_configuration(
+                        qs, q_near, edge_creator, collision_checker, tol
+                    )
+                    G.add_edge(vs, v_near, edge_near)
+                    G.set_vertex_cost(v_near, cost_through_vs)
 
             if use_goal and get_euclidean_distance(qs, qG) < tol:
                 return (G, root, vs)
