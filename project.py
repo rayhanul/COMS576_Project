@@ -89,7 +89,7 @@ def main_rrt(
 
 
 def main_prm(
-    cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, obs_boundaries
+    cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, obs_boundaries,k_nearest_prm_star
 ):
     """Task 3 (Solve the planning problem using PRM)"""
     fig, ax = plt.subplots()
@@ -111,7 +111,8 @@ def main_prm(
         distance_computator=distance_computator,
         collision_checker=collision_checker,
         radius_computer=radius_computer,
-        obs_boundaries=obs_boundaries
+        obs_boundaries=obs_boundaries,
+        k_nearest_prm_star=k_nearest_prm_star 
     )
     path = []
     if root is not None and goal is not None:
@@ -165,6 +166,7 @@ if __name__ == "__main__":
             distance_computator,
             collision_checker,
             radius_computer,
-            obs_boundaries
+            obs_boundaries, 
+            k_nearest_prm_star=False 
             
         )
