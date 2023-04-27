@@ -85,12 +85,13 @@ class EdgeStraight(Edge):
         self.length = get_euclidean_distance(
             self.s1, self.s2
         )  # the length of this line segment
-        self.tstep = min(step_size / self.length, 1)  # for discretization purpose
+        self.tstep = min(step_size / (self.length + 1e-6),
+                         1)  # for discretization purpose
 
         # The number of discretized state
         self.num_discretized_states = math.ceil(self.length / step_size) + 1
-        
-        self.parent_cost=0
+
+        self.parent_cost = 0
 
     def reverse(self):
         """Reverse the origin/destination of the edge"""

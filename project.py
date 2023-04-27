@@ -1,7 +1,10 @@
-import sys, argparse, os 
+import sys
+import argparse
+import os
 import matplotlib.pyplot as plt
 from planning import (
     rrt,
+    rrt_star,
     prm,
     prm_star,
     StraightEdgeCreator,
@@ -16,6 +19,7 @@ ALG_RRT = "rrt"
 ALG_PRM = "prm"
 ALG_PRM_STAR = "prm_star"
 
+
 def parse_args():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(
@@ -23,7 +27,7 @@ def parse_args():
     )
     parser.add_argument(
         "--alg",
-        choices=[ALG_RRT, ALG_PRM],
+        choices=[ALG_RRT, ALG_PRM, 'rrtstar'],
         required=False,
         default=ALG_RRT,
         dest="alg",
@@ -81,6 +85,54 @@ def main_rrt(
     plt.show()
 
 
+def main_rrt_star(
+    cspace, qI, qG, edge_creator, distance_computator, collision_checker, obs_boundaries
+):
+    """Task 1 (Exploring the C-space using RRT) and Task 2 (Solve the planning problem using RRT)"""
+    fig, ax3 = plt.subplots(1, 1)
+
+    # Task 1a: Neglect obstacles and goal
+    # title1 = "RRT exploration, neglecting obstacles"
+    # (G1, _, _) = rrt(
+    #     cspace=cspace,
+    #     qI=qI,
+    #     qG=None,
+    #     edge_creator=edge_creator,
+    #     distance_computator=distance_computator,
+    #     collision_checker=EmptyCollisionChecker(),
+    # )
+    # draw(ax1, cspace, obs_boundaries, qI, qG, G1, [], title1)
+
+    # # Task 1b: Include obstacles, neglect goal
+    # title2 = "RRT exploration, considering obstacles"
+    # (G2, _, _) = rrt(
+    #     cspace=cspace,
+    #     qI=qI,
+    #     qG=None,
+    #     edge_creator=edge_creator,
+    #     distance_computator=distance_computator,
+    #     collision_checker=collision_checker,
+    # )
+    # draw(ax2, cspace, obs_boundaries, qI, qG, G2, [], title2)
+
+    # Task 2: Include obstacles and goal
+    title3 = "RRT planning"
+    (G3, root3, goal3) = rrt_star(
+        cspace=cspace,
+        qI=qI,
+        qG=qG,
+        edge_creator=edge_creator,
+        distance_computator=distance_computator,
+        collision_checker=collision_checker,
+    )
+    path = []
+    if goal3 is not None:
+        path = G3.get_path(root3, goal3)
+    draw(ax3, cspace, obs_boundaries, qI, qG, G3, path, title3)
+
+    plt.show()
+
+
 def main_prm(
     cspace, qI, qG, edge_creator, distance_computator, collision_checker, obs_boundaries
 ):
@@ -113,7 +165,7 @@ def main_prm(
 
 if __name__ == "__main__":
     # python hw4.py --alg rrt
-    sys.argv=[os.path.basename(__file__), '--alg', 'prm']
+    sys.argv = [os.path.basename(__file__), '--alg', 'prm']
 
     cspace = [(-3, 3), (-1, 1)]
     qI = (-2, -0.5)
@@ -146,7 +198,7 @@ if __name__ == "__main__":
             obs_boundaries,
         )
     else:
-        main_prm(
+        main_rrt_star(
             cspace,
             qI,
             qG,

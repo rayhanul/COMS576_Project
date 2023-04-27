@@ -3,11 +3,13 @@ import numpy as np
 from graph import Tree, GraphCC
 from edge import EdgeStraight
 from geometry import get_euclidean_distance
-import math 
+import math
 
 ##############################################################################
 # Classes for creating an edge
 ##############################################################################
+
+
 class EdgeCreator:
     def make_edge(self, s1, s2):
         """Return an Edge object beginning at state s1 and ending at state s2"""
@@ -141,6 +143,7 @@ def rrt(
 
     return (G, root, None)
 
+
 def rrt_star(
     cspace,
     qI,
@@ -149,38 +152,21 @@ def rrt_star(
     distance_computator,
     collision_checker,
     pG=0.1,
-    numIt=500,
+    numIt=100,
     tol=1e-3,
+    k_nearest=5,
 ):
-    """RRT with obstacles
-
-    @type cspace: a list of tuples (smin, smax) indicating that the C-space
-        is given by the product of the tuples.
-    @type qI: a tuple (x, y) indicating the initial configuration.
-    @type qG: a typle (x, y) indicating the goal configuation
-        (can be None if rrt is only used to explore the C-space).
-    @type edge_creator: an EdgeCreator object that includes the make_edge(s1, s2) function,
-        which returns an Edge object beginning at state s1 and ending at state s2.
-    @type distance_computator: a DistanceComputator object that includes the get_distance(s1, s2)
-        function, which returns the distance between s1 and s2.
-    @type collision_checker: a CollisionChecker object that includes the is_in_collision(s)
-        function, which returns whether the state s is in collision.
-    @type pG: a float indicating the probability of choosing the goal configuration.
-    @type numIt: an integer indicating the maximum number of iterations.
-    @type tol: a float, indicating the tolerance on the euclidean distance when checking whether
-        2 states are the same
-
-    @return (G, root, goal) where G is the tree, root is the id of the root vertex
-        and goal is the id of the goal vertex (if one exists in the tree; otherwise goal will be None).
-    """
     G = Tree()
     root = G.add_vertex(np.array(qI))
+    G.set_vertex_cost(root, 0)
+
     for i in range(numIt):
         use_goal = qG is not None and random.uniform(0, 1) <= pG
         if use_goal:
             alpha = np.array(qG)
         else:
             alpha = sample(cspace)
+
         vn = G.get_nearest(alpha, distance_computator, tol)
         qn = G.get_vertex_state(vn)
         (qs, edge) = stopping_configuration(
@@ -188,14 +174,38 @@ def rrt_star(
         )
         if qs is None or edge is None:
             continue
+
         dist = get_euclidean_distance(qn, qs)
         if dist > tol:
             vs = G.add_vertex(qs)
             G.add_edge(vn, vs, edge)
+            G.set_vertex_cost(vs, G.get_vertex_cost(vn) + dist)
+
+            # Rewire the vertices within a certain radius
+            nearest_vertices = G.get_nearest_vertices(
+                qs, k_nearest, distance_computator)
+            for v_near in nearest_vertices:
+                q_near = G.get_vertex_state(v_near)
+                (qs_rewired, edge_rewired) = stopping_configuration(
+                    q_near, qs, edge_creator, collision_checker, tol
+                )
+
+                if qs_rewired is None or edge_rewired is None:
+                    continue
+
+                if np.allclose(qs_rewired, qs):
+                    cost_via_near = G.get_vertex_cost(
+                        v_near) + edge_rewired.get_cost()
+                    if cost_via_near < G.get_vertex_cost(vs):
+                        G.remove_edge((vn, vs))
+                        G.add_edge(v_near, vs, edge_rewired)
+                        G.set_vertex_cost(vs, cost_via_near)
+
             if use_goal and get_euclidean_distance(qs, qG) < tol:
                 return (G, root, vs)
 
     return (G, root, None)
+
 
 def prm_star(
     cspace,
@@ -227,18 +237,19 @@ def prm_star(
         and goal is the id of the goal vertex.
         If the root (resp. goal) vertex does not exist in the roadmap, root (resp. goal) will be None.
     """
-    def get_k_prm_star(G,e=1, d=2):
-        number_nodes=len(G.vertices)
+    def get_k_prm_star(G, e=1, d=2):
+        number_nodes = len(G.vertices)
         k_prm = e * 2
-        if number_nodes==0:
+        if number_nodes == 0:
             return 0
         return math.ceil(k_prm * math.log(number_nodes))
-    
+
     def add_to_roadmap(G, alpha):
         """Add configuration alpha to the roadmap G"""
         if collision_checker.is_in_collision(alpha):
             return None
-        neighbors = G.get_nearest_vertices(alpha, get_k_prm_star(G), distance_computator,1)
+        neighbors = G.get_nearest_vertices(
+            alpha, get_k_prm_star(G), distance_computator, 1)
         vs = G.add_vertex(alpha)
         for vn in neighbors:
             if G.is_same_component(vn, vs):
@@ -328,7 +339,8 @@ def prm(
 
 def sample(cspace):
     """Return a sample configuration of the C-space based on uniform random sampling"""
-    sample = [random.uniform(cspace_comp[0], cspace_comp[1]) for cspace_comp in cspace]
+    sample = [random.uniform(cspace_comp[0], cspace_comp[1])
+              for cspace_comp in cspace]
     return np.array(sample)
 
 
