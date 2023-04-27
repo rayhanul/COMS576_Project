@@ -51,7 +51,8 @@ class Radius_computer:
 
         gamma_prm_star=self.get_gamma_prm(mu_x_free, xi_d, d)
         gamma_prm=gamma_prm_star+0.1
-
+        if number_vertices==0:
+            return 0
         return min(r, gamma_prm * (math.log(number_vertices) / number_vertices) ** (1 / d))
 
     def get_k_prm_star(self, number_vertices, e=1, d=2):
@@ -60,26 +61,26 @@ class Radius_computer:
             return 0
         return math.ceil(k_prm * math.log(number_vertices))
 
-# if __name__ == '__main__':
-#     print("This is test")
+if __name__ == '__main__':
+    print("This is test")
 
-#     cspace = [(-3, 3), (-1, 1)]
+    cspace = [(-3, 3), (-1, 1)]
 
-#     x = radius_computer(cspace, 0.98)
+    x = Radius_computer(cspace, 0.98)
 
-#     cspace = [(-3, 3), (-1, 1)]
+    cspace = [(-3, 3), (-1, 1)]
     
-#     obstacle_center = (0, 0)
+    obstacle_center = (0, 0)
 
-#     total_area = x.cspace_area()
-#     obstacle_area = x.half_circle_area()
-#     obstacle_free_area = total_area - obstacle_area
+    total_area = x.cspace_area()
+    obstacle_area = x.half_circle_area()
+    obstacle_free_area = total_area - obstacle_area
 
 
-#     # Calculate radius for PRM*
-#     num_samples = 1000
-#     dimension = 2
-#     for i in range(1, 1000):
-#         radius = x.get_prm_star_radius(i)
-#         if i%100==0:
-#             print("Radius for PRM*:", radius)
+    # Calculate radius for PRM*
+    num_samples = 1000
+    dimension = 2
+    for i in range(0, 1000):
+        radius = x.get_prm_star_radius(i)
+        if i%100==0:
+            print("Radius for PRM*:", radius)
