@@ -1,5 +1,4 @@
-import math
-import copy
+import math, copy
 from heapq import heappush
 from myQueue import QueueAstar
 
@@ -66,8 +65,7 @@ class Graph:
         if len(self.edges) == 0:
             return self.get_nearest_vertex(state, distance_computator)
 
-        (nearest_edge, nearest_t) = self.get_nearest_edge(
-            state, distance_computator)
+        (nearest_edge, nearest_t) = self.get_nearest_edge(state, distance_computator)
         if nearest_t <= tol:
             return nearest_edge[0]
 
@@ -113,7 +111,19 @@ class Graph:
                 nearest_dist = dist
                 nearest_vertex = vertex
         return nearest_vertex
-
+    
+    def near(self, state, radius, distance_computator):
+        dist_vertices = []
+        for vertex, s in self.vertices.items():
+            dist = distance_computator.get_distance(s, state)
+            if dist < radius:
+                heappush(dist_vertices, (dist, vertex))
+        
+        nearest_vertices = [
+            item[1] for item in dist_vertices
+        ]
+        return nearest_vertices
+    
     def get_nearest_vertices(self, state, k, distance_computator, PRM_star=0):
         """Return the ids of k nearest vertices to the given state based on the given distance function
         @type distance_computator: a DistanceComputator object that includes the get_distance(s1, s2)
@@ -123,16 +133,15 @@ class Graph:
         for vertex, s in self.vertices.items():
             dist = distance_computator.get_distance(s, state)
             heappush(dist_vertices, (dist, vertex))
-        if PRM_star == 0:
-            k_range = min(k, len(dist_vertices))
-        else:
-            k_range = k
-        print(f"k: {k}")
+        if PRM_star==0:
+            k_range=min(k, len(dist_vertices))
+        else: 
+            k_range=k 
         nearest_vertices = [
             dist_vertices[i][1] for i in range(k_range)
         ]
         return nearest_vertices
-
+    
     def split_edge(self, edge_id, t):
         """Split the given edge at distance t/length where length is the length of the edge
 
@@ -224,10 +233,6 @@ class Graph:
 class Tree(Graph):
     """A graph where each vertex has at most one parent"""
 
-    def __init__(self):
-        super().__init__()
-        self.vertex_costs = {}  # Add a dictionary to store the cost-to-come for each vertex
-
     def add_edge(self, vid1, vid2, edge):
         """Add an edge from vertex with id vid1 to vertex with id vid2"""
         # Ensure that a vertex only has at most one parent (this is a tree).
@@ -245,35 +250,6 @@ class Tree(Graph):
             v = parents[0]
             vertex_path.insert(0, v)
         return vertex_path
-
-    def set_vertex_cost(self, vid, cost):
-        """Set the cost-to-come for the vertex with id vid"""
-        self.vertex_costs[vid] = cost
-
-    def get_vertex_cost(self, vid):
-        """Get the cost-to-come for the vertex with id vid"""
-        return self.vertex_costs.get(vid, None)
-
-    def get_nearby_vertices(self, state, radius, distance_computator):
-        """Return the ids of vertices within radius of the given state based on the given distance function"""
-        nearby_vertices = [
-            vid for vid, s in self.vertices.items() if distance_computator.get_distance(s, state) <= radius
-        ]
-        return nearby_vertices
-
-    def get_vertex_parent(self, vid):
-        """Get the parent of a vertex with id vid"""
-        parents = self.parents.get(vid)
-        if parents:
-            return parents[0]
-        return None
-
-    def remove_edge(self, edge_id):
-        """Remove a given edge
-
-        @type edge: a tuple (vid1, vid2) indicating the id of the origin and the destination vertices
-        """
-        super().remove_edge(edge_id)
 
 
 class GraphCC(Graph):

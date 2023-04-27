@@ -3,13 +3,11 @@ import numpy as np
 from graph import Tree, GraphCC
 from edge import EdgeStraight
 from geometry import get_euclidean_distance
-import math
+import math 
 
 ##############################################################################
 # Classes for creating an edge
 ##############################################################################
-
-
 class EdgeCreator:
     def make_edge(self, s1, s2):
         """Return an Edge object beginning at state s1 and ending at state s2"""
@@ -143,7 +141,6 @@ def rrt(
 
     return (G, root, None)
 
-
 def rrt_star(
     cspace,
     qI,
@@ -152,74 +149,53 @@ def rrt_star(
     distance_computator,
     collision_checker,
     pG=0.1,
-    numIt=100,
+    numIt=500,
     tol=1e-3,
-    search_radius=1.0,
 ):
+    """RRT with obstacles
+
+    @type cspace: a list of tuples (smin, smax) indicating that the C-space
+        is given by the product of the tuples.
+    @type qI: a tuple (x, y) indicating the initial configuration.
+    @type qG: a typle (x, y) indicating the goal configuation
+        (can be None if rrt is only used to explore the C-space).
+    @type edge_creator: an EdgeCreator object that includes the make_edge(s1, s2) function,
+        which returns an Edge object beginning at state s1 and ending at state s2.
+    @type distance_computator: a DistanceComputator object that includes the get_distance(s1, s2)
+        function, which returns the distance between s1 and s2.
+    @type collision_checker: a CollisionChecker object that includes the is_in_collision(s)
+        function, which returns whether the state s is in collision.
+    @type pG: a float indicating the probability of choosing the goal configuration.
+    @type numIt: an integer indicating the maximum number of iterations.
+    @type tol: a float, indicating the tolerance on the euclidean distance when checking whether
+        2 states are the same
+
+    @return (G, root, goal) where G is the tree, root is the id of the root vertex
+        and goal is the id of the goal vertex (if one exists in the tree; otherwise goal will be None).
+    """
     G = Tree()
     root = G.add_vertex(np.array(qI))
-    G.set_vertex_cost(root, 0)
-
     for i in range(numIt):
         use_goal = qG is not None and random.uniform(0, 1) <= pG
         if use_goal:
             alpha = np.array(qG)
         else:
             alpha = sample(cspace)
-
         vn = G.get_nearest(alpha, distance_computator, tol)
         qn = G.get_vertex_state(vn)
         (qs, edge) = stopping_configuration(
             qn, alpha, edge_creator, collision_checker, tol
         )
-
         if qs is None or edge is None:
             continue
-
         dist = get_euclidean_distance(qn, qs)
         if dist > tol:
-            nearby_vertices = G.get_nearby_vertices(
-                qs, search_radius, distance_computator)
-
-            # Find the lowest cost-to-come vertex to reach the new vertex
-            min_cost_vertex = vn
-            min_cost = G.get_vertex_cost(vn) + dist
-            for v_near in nearby_vertices:
-                q_near = G.get_vertex_state(v_near)
-                cost = G.get_vertex_cost(
-                    v_near) + get_euclidean_distance(q_near, qs)
-                if cost < min_cost:
-                    min_cost = cost
-                    min_cost_vertex = v_near
-
-            # Add the new vertex and edge with the lowest cost-to-come
             vs = G.add_vertex(qs)
-            G.set_vertex_cost(vs, min_cost)
-            q_min_cost = G.get_vertex_state(min_cost_vertex)
-            (_, min_cost_edge) = stopping_configuration(
-                q_min_cost, qs, edge_creator, collision_checker, tol
-            )
-            G.add_edge(min_cost_vertex, vs, min_cost_edge)
-
-            # Rewire nearby vertices if the new vertex provides a lower cost-to-come
-            for v_near in nearby_vertices:
-                q_near = G.get_vertex_state(v_near)
-                cost_through_vs = G.get_vertex_cost(
-                    vs) + get_euclidean_distance(qs, q_near)
-                if cost_through_vs < G.get_vertex_cost(v_near):
-                    v_parent = G.get_vertex_parent(v_near)
-                    G.remove_edge(v_parent, v_near)
-                    (_, edge_near) = stopping_configuration(
-                        qs, q_near, edge_creator, collision_checker, tol
-                    )
-                    G.add_edge(vs, v_near, edge_near)
-                    G.set_vertex_cost(v_near, cost_through_vs)
-
+            G.add_edge(vn, vs, edge)
             if use_goal and get_euclidean_distance(qs, qG) < tol:
                 return (G, root, vs)
 
     return (G, root, None)
-
 
 def prm_star(
     cspace,
@@ -251,19 +227,23 @@ def prm_star(
         and goal is the id of the goal vertex.
         If the root (resp. goal) vertex does not exist in the roadmap, root (resp. goal) will be None.
     """
-    def get_k_prm_star(G, e=1, d=2):
-        number_nodes = len(G.vertices)
+    def get_k_prm_star(G,e=1, d=2):
+        number_nodes=len(G.vertices)
         k_prm = e * 2
-        if number_nodes == 0:
+        if number_nodes==0:
             return 0
         return math.ceil(k_prm * math.log(number_nodes))
+    
+    def get_radius_prm_star():
 
+        return 1.2 
+    
     def add_to_roadmap(G, alpha):
         """Add configuration alpha to the roadmap G"""
         if collision_checker.is_in_collision(alpha):
             return None
-        neighbors = G.get_nearest_vertices(
-            alpha, get_k_prm_star(G), distance_computator, 1)
+        # neighbors = G.get_nearest_vertices(alpha, get_k_prm_star(G), distance_computator,1)
+        neighbors = G.near(alpha, get_radius_prm_star(), distance_computator)
         vs = G.add_vertex(alpha)
         for vn in neighbors:
             if G.is_same_component(vn, vs):
@@ -353,8 +333,7 @@ def prm(
 
 def sample(cspace):
     """Return a sample configuration of the C-space based on uniform random sampling"""
-    sample = [random.uniform(cspace_comp[0], cspace_comp[1])
-              for cspace_comp in cspace]
+    sample = [random.uniform(cspace_comp[0], cspace_comp[1]) for cspace_comp in cspace]
     return np.array(sample)
 
 
