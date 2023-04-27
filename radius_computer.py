@@ -49,14 +49,16 @@ class Radius_computer:
         mu_x_free=self.get_mu_x_free()
         xi_d=self.get_xi_d()
 
-        gamma_prm=self.get_gamma_prm(mu_x_free, xi_d, d)
+        gamma_prm_star=self.get_gamma_prm(mu_x_free, xi_d, d)
+        gamma_prm=gamma_prm_star+0.1
 
         return min(r, gamma_prm * (math.log(number_vertices) / number_vertices) ** (1 / d))
 
     def get_k_prm_star(self, number_vertices, e=1, d=2):
-        k_prm=2*e 
+        k_prm = e * 2
+        if number_vertices == 0:
+            return 0
         return math.ceil(k_prm * math.log(number_vertices))
-
 
 # if __name__ == '__main__':
 #     print("This is test")
