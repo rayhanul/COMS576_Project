@@ -8,7 +8,6 @@ from planning import (
     rrt_sharp,
     prm,
     prm_star,
-    prm_star_new,
     StraightEdgeCreator,
     EuclideanDistanceComputator,
     EmptyCollisionChecker,
@@ -42,7 +41,7 @@ def parse_args():
 
 
 def main_rrt(
-    cspace, qI, qG, edge_creator, distance_computator, collision_checker, obs_boundaries
+    cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, k_nearest
 ):
     """Task 1 (Exploring the C-space using RRT) and Task 2 (Solve the planning problem using RRT)"""
     fig, ax3 = plt.subplots(1, 1)
@@ -73,13 +72,15 @@ def main_rrt(
 
     # Task 2: Include obstacles and goal
     title3 = "RRT planning"
-    (G3, root3, goal3) = rrt_sharp(
+    (G3, root3, goal3) = rrt_star(
         cspace=cspace,
         qI=qI,
         qG=qG,
         edge_creator=edge_creator,
         distance_computator=distance_computator,
         collision_checker=collision_checker,
+        radius_computer=radius_computer,
+        k_nearest=k_nearest,
     )
     path = []
     if goal3 is not None:
@@ -125,7 +126,7 @@ def main_prm(
 
 if __name__ == "__main__":
     # python hw4.py --alg rrt
-    sys.argv = [os.path.basename(__file__), '--alg', 'prm']
+    sys.argv = [os.path.basename(__file__), '--alg', 'rrt']
 
     cspace = [(-3, 3), (-1, 1)]
     qI = (-2, -0.5)
@@ -156,7 +157,8 @@ if __name__ == "__main__":
             edge_creator,
             distance_computator,
             collision_checker,
-            obs_boundaries,
+            radius_computer,
+            k_nearest=True
         )
     else:
         main_prm(
@@ -168,6 +170,6 @@ if __name__ == "__main__":
             collision_checker,
             radius_computer,
             obs_boundaries,
-            k_nearest_prm_star=True
+            k_nearest_prm_star=False
 
         )

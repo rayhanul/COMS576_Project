@@ -55,11 +55,21 @@ class Radius_computer:
             return 0
         return min(r, gamma_prm * (math.log(number_vertices) / number_vertices) ** (1 / d))
 
-    def get_k_prm_star(self, number_vertices, e=1, d=2):
-        k_prm = e * 2
+    def get_k_prm_star(self, number_vertices, e=2.71828, d=2):
+        k_prm =  2 * e 
         if number_vertices == 0:
             return 0
         return math.ceil(k_prm * math.log(number_vertices))
+    
+    def get_k_nearest_RRT_star(self, cardinality, k_rrg=5.6):
+        if cardinality ==0:
+            return 0
+        return math.ceil(k_rrg * math.log(cardinality))
+    
+    def get_radius_RRT_star(self, cardinality, gamma_rrt_star=1, eta=2, d=2):
+
+        variable_radius=gamma_rrt_star * (math.log(cardinality)/ cardinality)**(1/d)
+        return min(variable_radius, eta)
 
 # if __name__ == '__main__':
 #     print("This is test")

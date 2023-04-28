@@ -151,14 +151,21 @@ def rrt_star(
     edge_creator,
     distance_computator,
     collision_checker,
+    radius_computer,
+    k_nearest=False,
     pG=0.1,
     numIt=100,
     tol=1e-3,
-    k=10,
 ):
-    def rewire(G, vs, distance_computator, edge_creator, collision_checker, k):
+    def rewire(G, vs, distance_computator, edge_creator, collision_checker, radius_computer, k_nearest):
         qs = G.get_vertex_state(vs)
-        vertices = G.get_nearest_vertices(qs, k, distance_computator)
+        if k_nearest:
+            k=radius_computer.get_k_nearest_RRT_star(len(G.vertices))
+            vertices = G.get_nearest_vertices(qs, k, distance_computator)
+        else: 
+            radius=radius_computer.get_radius_RRT_star(len(G.vertices))
+            vertices = G.near(alpha, radius, distance_computator)
+        
         for vn in vertices:
             if vn != vs:
                 qn = G.get_vertex_state(vn)
@@ -205,7 +212,7 @@ def rrt_star(
             G.add_edge(vn, vs, edge)
             G.set_vertex_cost(vs, G.get_vertex_cost(vn) + edge.get_cost())
             rewire(G, vs, distance_computator,
-                   edge_creator, collision_checker, k)
+                   edge_creator, collision_checker, radius_computer, k_nearest)
             if use_goal and get_euclidean_distance(qs, qG) < tol:
                 return (G, root, vs)
 
@@ -344,60 +351,6 @@ def prm_star(
         else:
             neighbors = G.near(alpha, radius_computer.get_prm_star_radius(
                 len(G.vertices)), distance_computator)
-        vs = G.add_vertex(alpha)
-        for vn in neighbors:
-            if G.is_same_component(vn, vs):
-                continue
-            qn = G.get_vertex_state(vn)
-            if connect(alpha, qn, edge_creator, collision_checker, tol) and connect(
-                qn, alpha, edge_creator, collision_checker, tol
-            ):
-                G.add_edge(vs, vn, edge_creator.make_edge(alpha, qn))
-        return vs
-
-    G = GraphCC()
-    i = 0
-    while i < numIt:
-        alpha = sample(cspace)
-        if add_to_roadmap(G, alpha) is not None:
-            i = i + 1
-    root = None
-    if qI is not None:
-        root = add_to_roadmap(G, np.array(qI))
-    goal = None
-    if qG is not None:
-        goal = add_to_roadmap(G, np.array(qG))
-    return (G, root, goal)
-
-
-def prm_star_new(
-    cspace,
-    qI,
-    qG,
-    edge_creator,
-    distance_computator,
-    collision_checker,
-    numIt=1000,
-    tol=1e-3,
-    d=2,
-    gamma_prm=1.0  # Add gamma_prm as an argument, and set its default value
-):
-    def get_radius_prm_star(n, d, gamma_prm):
-        n = n
-        # print("value of n", n)
-        return gamma_prm * (math.log(n) / n) ** (1 / d)
-
-    def add_to_roadmap(G, alpha):
-        """Add configuration alpha to the roadmap G"""
-        if collision_checker.is_in_collision(alpha):
-            return None
-
-        # Call get_radius_prm_star() to get the connection radius based on the current graph G
-        radius = get_radius_prm_star(len(G.vertices)+1, d, gamma_prm)
-
-        # Replace the fixed radius with the calculated radius
-        neighbors = G.near(alpha, radius, distance_computator)
-
         vs = G.add_vertex(alpha)
         for vn in neighbors:
             if G.is_same_component(vn, vs):
