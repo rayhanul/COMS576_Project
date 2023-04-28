@@ -138,7 +138,7 @@ class Graph:
         if PRM_star == 0:
             k_range = min(k, len(dist_vertices))
         else:
-            k_range = k
+            k_range = min(k, len(dist_vertices))
         nearest_vertices = [
             dist_vertices[i][1] for i in range(k_range)
         ]

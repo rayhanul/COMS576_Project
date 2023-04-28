@@ -119,14 +119,13 @@ def main_prm(
     path = []
     if root is not None and goal is not None:
         path = G.get_path(root, goal)
-        print(path)
     draw(ax, cspace, obs_boundaries, qI, qG, G, path, title)
     plt.show()
 
 
 if __name__ == "__main__":
     # python hw4.py --alg rrt
-    sys.argv = [os.path.basename(__file__), '--alg', 'rrt']
+    sys.argv = [os.path.basename(__file__), '--alg', 'prm']
 
     cspace = [(-3, 3), (-1, 1)]
     qI = (-2, -0.5)
@@ -158,7 +157,7 @@ if __name__ == "__main__":
             distance_computator,
             collision_checker,
             radius_computer,
-            k_nearest=True
+            k_nearest=False
         )
     else:
         main_prm(
@@ -170,6 +169,6 @@ if __name__ == "__main__":
             collision_checker,
             radius_computer,
             obs_boundaries,
-            k_nearest_prm_star=False
+            k_nearest_prm_star=True
 
         )

@@ -59,7 +59,8 @@ class Radius_computer:
         k_rrg_optimal =  2 * e 
         if number_vertices == 0:
             return 0
-        return math.ceil(k_rrg_optimal * math.log(number_vertices))
+        k=math.ceil(k_rrg_optimal * math.log(number_vertices))
+        return k 
     
     def get_radius_RRT_star(self, cardinality, eta, gamma_rrt_star=1, d=2):
         # variable_radius=gamma_rrt_star * (math.log(cardinality)/ cardinality)**(1/d)
