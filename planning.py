@@ -153,17 +153,19 @@ def rrt_star(
     collision_checker,
     radius_computer,
     k_nearest=False,
+    eta=2.5,
     pG=0.1,
     numIt=100,
     tol=1e-3,
 ):
-    def rewire(G, vs, distance_computator, edge_creator, collision_checker, radius_computer, k_nearest):
+    def rewire(G, vs, distance_computator, edge_creator, collision_checker, radius_computer, k_nearest, eta):
         qs = G.get_vertex_state(vs)
         if k_nearest:
-            k=radius_computer.get_k_nearest_RRT_star(len(G.vertices))
+            k=radius_computer.get_dynamic_k_nearest_val( len(G.vertices), 0.5)
             vertices = G.get_nearest_vertices(qs, k, distance_computator)
         else: 
-            radius=radius_computer.get_radius_RRT_star(len(G.vertices))
+            radius=radius_computer.get_radius_RRT_star(len(G.vertices), eta)
+            #  here eta is a user defined constant defined by user...
             vertices = G.near(alpha, radius, distance_computator)
         
         for vn in vertices:
@@ -212,7 +214,7 @@ def rrt_star(
             G.add_edge(vn, vs, edge)
             G.set_vertex_cost(vs, G.get_vertex_cost(vn) + edge.get_cost())
             rewire(G, vs, distance_computator,
-                   edge_creator, collision_checker, radius_computer, k_nearest)
+                   edge_creator, collision_checker, radius_computer, k_nearest, eta)
             if use_goal and get_euclidean_distance(qs, qG) < tol:
                 return (G, root, vs)
 
@@ -347,7 +349,7 @@ def prm_star(
 
         if k_nearest_prm_star:
             neighbors = G.get_nearest_vertices(
-                alpha, radius_computer.get_k_prm_star(len(G.vertices)), distance_computator, 1)
+                alpha, radius_computer.get_dynamic_k_nearest_val(len(G.vertices)), distance_computator, 1)
         else:
             neighbors = G.near(alpha, radius_computer.get_prm_star_radius(
                 len(G.vertices)), distance_computator)
