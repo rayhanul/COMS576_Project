@@ -63,30 +63,6 @@ class Radius_computer:
         return k 
     
     def get_radius_RRT_star(self, cardinality, eta, gamma_rrt_star=1, d=2):
-        # variable_radius=gamma_rrt_star * (math.log(cardinality)/ cardinality)**(1/d)
         variable_radius=self.get_prm_star_radius(cardinality)
         return min(variable_radius, eta)
 
-# if __name__ == '__main__':
-#     print("This is test")
-
-#     cspace = [(-3, 3), (-1, 1)]
-
-#     x = Radius_computer(cspace, 0.98)
-
-#     cspace = [(-3, 3), (-1, 1)]
-    
-#     obstacle_center = (0, 0)
-
-#     total_area = x.cspace_area()
-#     obstacle_area = x.half_circle_area()
-#     obstacle_free_area = total_area - obstacle_area
-
-
-#     # Calculate radius for PRM*
-#     num_samples = 1000
-#     dimension = 2
-#     for i in range(0, 1000):
-#         radius = x.get_prm_star_radius(i)
-#         if i%100==0:
-#             print("Radius for PRM*:", radius)

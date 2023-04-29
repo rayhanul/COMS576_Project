@@ -298,7 +298,7 @@ def prm(
     edge_creator,
     distance_computator,
     collision_checker,
-    k,
+    k=15,
     numIt=1000,
     tol=1e-3,
 ):

@@ -10,7 +10,14 @@ Put the following files in the same folder or in your PYTHONPATH
 
 For Task 1 and Task 2, run
 
-$ python hw4.py --alg rrt
+$ python project.py --alg rrt
+
+$ python project.py --alg rrt_star --type r 
+$ python project.py --alg rrt_star --type k 
+
+$ python project.py --alg prm_star --type r 
+$ python project.py --alg prm_star --type k 
+
 
 It will take a few seconds before showing the plot of the configuration space, the tree, and the path.
 

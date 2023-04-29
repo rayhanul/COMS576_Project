@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from planning import (
     rrt,
     rrt_star,
-    rrt_sharp,
     prm,
     prm_star,
     StraightEdgeCreator,
@@ -21,6 +20,8 @@ from radius_computer import Radius_computer
 ALG_RRT = "rrt"
 ALG_PRM = "prm"
 ALG_PRM_STAR = "prm_star"
+ALG_RRT_STAR="rrt_star"
+
 
 
 def parse_args():
@@ -30,47 +31,52 @@ def parse_args():
     )
     parser.add_argument(
         "--alg",
-        choices=[ALG_RRT, ALG_PRM],
+        choices=[ALG_RRT, ALG_PRM, ALG_PRM_STAR, ALG_RRT_STAR],
         required=False,
         default=ALG_RRT,
         dest="alg",
         help="algorithm, default to rrt",
+    )
+    parser.add_argument(
+        "--type",
+        choices=['k','r'],
+        required=False,
+        default='k',
+        dest="type",
+        help="algorithm, default to use k nearest",
     )
     args = parser.parse_args(sys.argv[1:])
     return args
 
 
 def main_rrt(
+    cspace, qI, qG, edge_creator, distance_computator, collision_checker
+):
+    """Task 1 (Exploring the C-space using RRT) and Task 2 (Solve the planning problem using RRT)"""
+    fig, ax3 = plt.subplots()
+    title3 = "RRT planning"
+    (G3, root3, goal3) = rrt(
+        cspace=cspace,
+        qI=qI,
+        qG=qG,
+        edge_creator=edge_creator,
+        distance_computator=distance_computator,
+        collision_checker=collision_checker,
+
+    )
+
+    path = []
+    if goal3 is not None:
+        path = G3.get_path(root3, goal3)
+    draw(ax3, cspace, obs_boundaries, qI, qG, G3, path, title3)
+
+    plt.show()
+
+def main_rrt_star(
     cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, k_nearest
 ):
     """Task 1 (Exploring the C-space using RRT) and Task 2 (Solve the planning problem using RRT)"""
-    fig, ax3 = plt.subplots(1, 1)
-
-    # Task 1a: Neglect obstacles and goal
-    # title1 = "RRT exploration, neglecting obstacles"
-    # (G1, _, _) = rrt(
-    #     cspace=cspace,
-    #     qI=qI,
-    #     qG=None,
-    #     edge_creator=edge_creator,
-    #     distance_computator=distance_computator,
-    #     collision_checker=EmptyCollisionChecker(),
-    # )
-    # draw(ax1, cspace, obs_boundaries, qI, qG, G1, [], title1)
-
-    # # Task 1b: Include obstacles, neglect goal
-    # title2 = "RRT exploration, considering obstacles"
-    # (G2, _, _) = rrt(
-    #     cspace=cspace,
-    #     qI=qI,
-    #     qG=None,
-    #     edge_creator=edge_creator,
-    #     distance_computator=distance_computator,
-    #     collision_checker=collision_checker,
-    # )
-    # draw(ax2, cspace, obs_boundaries, qI, qG, G2, [], title2)
-
-    # Task 2: Include obstacles and goal
+    fig, ax3 = plt.subplots()
     title3 = "RRT planning"
     (G3, root3, goal3) = rrt_star(
         cspace=cspace,
@@ -89,22 +95,32 @@ def main_rrt(
 
     plt.show()
 
-
 def main_prm(
+    cspace, qI, qG, edge_creator, distance_computator, collision_checker, obs_boundaries,
+):
+    """Task 3 (Solve the planning problem using PRM)"""
+    fig, ax = plt.subplots()
+    title = "PRM planning"
+    (G, root, goal) = prm(
+        cspace=cspace,
+        qI=qI,
+        qG=qG,
+        edge_creator=edge_creator,
+        distance_computator=distance_computator,
+        collision_checker=collision_checker,
+    )
+    path = []
+    if root is not None and goal is not None:
+        path = G.get_path(root, goal)
+    draw(ax, cspace, obs_boundaries, qI, qG, G, path, title)
+    plt.show()
+
+def main_prm_star(
     cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, obs_boundaries, k_nearest_prm_star
 ):
     """Task 3 (Solve the planning problem using PRM)"""
     fig, ax = plt.subplots()
     title = "PRM planning"
-    # (G, root, goal) = prm(
-    #     cspace=cspace,
-    #     qI=qI,
-    #     qG=qG,
-    #     edge_creator=edge_creator,
-    #     distance_computator=distance_computator,
-    #     collision_checker=collision_checker,
-    #     k=15,
-    # )
     (G, root, goal) = prm_star(
         cspace=cspace,
         qI=qI,
@@ -122,10 +138,9 @@ def main_prm(
     draw(ax, cspace, obs_boundaries, qI, qG, G, path, title)
     plt.show()
 
-
 if __name__ == "__main__":
     # python hw4.py --alg rrt
-    sys.argv = [os.path.basename(__file__), '--alg', 'prm']
+    sys.argv = [os.path.basename(__file__), '--alg', 'rrt', '--type', 'k']
 
     cspace = [(-3, 3), (-1, 1)]
     qI = (-2, -0.5)
@@ -147,28 +162,13 @@ if __name__ == "__main__":
     radius_computer = Radius_computer(cspace=cspace, raidus=0.98)
 
     args = parse_args()
+    k_nearest= True if args.type=='k' else False
 
     if args.alg == ALG_RRT:
-        main_rrt(
-            cspace,
-            qI,
-            qG,
-            edge_creator,
-            distance_computator,
-            collision_checker,
-            radius_computer,
-            k_nearest=False
-        )
+        main_rrt(cspace,qI,qG,edge_creator,distance_computator,collision_checker,)
+    elif args.alg==ALG_PRM_STAR:
+        main_prm_star(cspace,qI,qG,edge_creator,distance_computator,collision_checker,radius_computer,obs_boundaries,k_nearest,)
+    elif args.alg==ALG_RRT_STAR:
+        main_rrt(cspace,qI,qG,edge_creator,distance_computator,collision_checker,radius_computer,k_nearest,)
     else:
-        main_prm(
-            cspace,
-            qI,
-            qG,
-            edge_creator,
-            distance_computator,
-            collision_checker,
-            radius_computer,
-            obs_boundaries,
-            k_nearest_prm_star=True
-
-        )
+        main_prm(cspace,qI,qG,edge_creator,distance_computator,collision_checker,obs_boundaries,)
