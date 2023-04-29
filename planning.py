@@ -158,6 +158,25 @@ def rrt_star(
     numIt=100,
     tol=1e-3,
 ):
+    def update_child_cost(Graph, child, new_cost, old_cost):
+        
+        child_lst=[]
+        for key, val in G.parents.items():
+            if len(val)==0:
+                continue
+            if val[0]==child:
+                child_lst.append(key)
+
+        if len(child_lst)==0:
+            return
+        for each_child in child_lst:
+            old_child_cost=G.get_vertex_cost(each_child)
+            cost = old_cost- old_child_cost + new_cost
+            G.set_vertex_cost(each_child, cost)
+            update_child_cost(Graph, each_child, cost, old_child_cost)
+
+
+        
     def rewire(G, vs, distance_computator, edge_creator, collision_checker, radius_computer, k_nearest, eta):
         qs = G.get_vertex_state(vs)
         if k_nearest:
@@ -167,30 +186,40 @@ def rrt_star(
             radius=radius_computer.get_radius_RRT_star(len(G.vertices), eta)
             #  here eta is a user defined constant defined by user...
             vertices = G.near(alpha, radius, distance_computator)
-        
+    
+           
+        # for vn in vertices:
+        #     if vn != vs:
+        #         qn=G.get_vertex_state(vn)
+        #         (qe, edge) = stopping_configuration(qs, qn, edge_creator, collision_checker, tol)
+        #         if qe is not None and (qe == qn).all() and get_euclidean_distance(qn, qe) < tol:
+        #             cost_vs_vn= G.get_vertex_cost(vs) + edge.get_cost()
+        #             if cost_vs_vn < G.get_vertex_cost(vn):
+        #                     old_cost= G.get_vertex_cost(vn)
+        #                     G.set_parent(vn, vs, edge)
+        #                     G.set_vertex_cost(vn, cost_vs_vn)
+        #                     update_child_cost( G, vn, edge.get_cost(), old_cost)
+
+
         for vn in vertices:
             if vn != vs:
                 qn = G.get_vertex_state(vn)
-                (qe, edge) = stopping_configuration(
-                    qs, qn, edge_creator, collision_checker, tol
-                )
-                if qe is not None and get_euclidean_distance(qn, qe) < tol:
+                (qe, edge) = stopping_configuration(qs, qn, edge_creator, collision_checker, tol)
+                if qe is not None and (qe == qn).all() and get_euclidean_distance(qn, qe) < tol:
                     cost_to_come = G.get_vertex_cost(vs) + edge.get_cost()
                     if cost_to_come < G.get_vertex_cost(vn):
-                        G.set_parent(vs, vn, edge)
+                        G.set_parent(vn, vs, edge)
                         G.set_vertex_cost(vn, cost_to_come)
-
                         # Update cost-to-come of all children of vn
                         queue = [vn]
                         while queue:
                             u = queue.pop(0)
                             for v in G.parents.keys():
                                 if u in G.parents[v]:
-                                    cost_to_come = G.get_vertex_cost(
-                                        u) + G.get_edge_cost(u, v)
+                                    cost_to_come = G.get_vertex_cost(u) + G.get_edge_cost(u, v)
                                     G.set_vertex_cost(v, cost_to_come)
                                     queue.append(v)
-
+    print("inside rrt_star")
     G = Tree()
     root = G.add_vertex(np.array(qI))
     G.set_vertex_cost(root, 0)
@@ -202,19 +231,17 @@ def rrt_star(
             alpha = sample(cspace)
         vn = G.get_nearest(alpha, distance_computator, tol)
         qn = G.get_vertex_state(vn)
-        (qs, edge) = stopping_configuration(
-            qn, alpha, edge_creator, collision_checker, tol
-        )
+        (qs, edge) = stopping_configuration(qn, alpha, edge_creator, collision_checker, tol)
         if qs is None or edge is None:
             continue
         dist = get_euclidean_distance(qn, qs)
         if dist > tol:
             vs = G.add_vertex(qs)
-            # print("vs", vs)
             G.add_edge(vn, vs, edge)
-            G.set_vertex_cost(vs, G.get_vertex_cost(vn) + edge.get_cost())
-            rewire(G, vs, distance_computator,
-                   edge_creator, collision_checker, radius_computer, k_nearest, eta)
+            new_vertex_cost=G.get_vertex_cost(vn) + edge.get_cost()
+            G.set_vertex_cost(vs, new_vertex_cost)
+            print(f'cost of vertex {vs} : {new_vertex_cost}')
+            rewire(G, vs, distance_computator, edge_creator, collision_checker, radius_computer, k_nearest, eta)
             if use_goal and get_euclidean_distance(qs, qG) < tol:
                 return (G, root, vs)
 

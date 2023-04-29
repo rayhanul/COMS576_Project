@@ -89,8 +89,8 @@ def main_rrt_star(
         k_nearest=k_nearest,
     )
     path = []
-    if goal3 is not None:
-        path = G3.get_path(root3, goal3)
+    # if goal3 is not None:
+        # path = G3.get_path(root3, goal3)
     draw(ax3, cspace, obs_boundaries, qI, qG, G3, path, title3)
 
     plt.show()
@@ -140,12 +140,12 @@ def main_prm_star(
 
 if __name__ == "__main__":
     # python hw4.py --alg rrt
-    sys.argv = [os.path.basename(__file__), '--alg', 'rrt', '--type', 'k']
+    sys.argv = [os.path.basename(__file__), '--alg', 'rrt_star', '--type', 'k']
 
     cspace = [(-3, 3), (-1, 1)]
     qI = (-2, -0.5)
     qG = (2, -0.5)
-    obstacles = construct_circular_obstacles(0.02)
+    obstacles = construct_circular_obstacles(0.6)
     obs_boundaries = [obstacle.get_boundaries() for obstacle in obstacles]
 
     # We don't really need to explicitly need to check the world boundary

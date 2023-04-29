@@ -557,4 +557,33 @@ def rrt_sharp(
     return (G, root, None)
 
 
+# existing rewire 
 
+def rewire(G, vs, distance_computator, edge_creator, collision_checker, radius_computer, k_nearest, eta):
+        qs = G.get_vertex_state(vs)
+        if k_nearest:
+            k=radius_computer.get_dynamic_k_nearest_val( len(G.vertices), 0.5)
+            vertices = G.get_nearest_vertices(qs, k, distance_computator)
+        else: 
+            radius=radius_computer.get_radius_RRT_star(len(G.vertices), eta)
+            #  here eta is a user defined constant defined by user...
+            vertices = G.near(alpha, radius, distance_computator)
+        
+        for vn in vertices:
+            if vn != vs:
+                qn = G.get_vertex_state(vn)
+                (qe, edge) = stopping_configuration(qs, qn, edge_creator, collision_checker, tol)
+                if qe is not None and (qe == qn).all() and get_euclidean_distance(qn, qe) < tol:
+                    cost_to_come = G.get_vertex_cost(vs) + edge.get_cost()
+                    if cost_to_come < G.get_vertex_cost(vn):
+                        G.set_parent(vs, vn, edge)
+                        G.set_vertex_cost(vn, cost_to_come)
+                        # Update cost-to-come of all children of vn
+                        queue = [vn]
+                        while queue:
+                            u = queue.pop(0)
+                            for v in G.parents.keys():
+                                if u in G.parents[v]:
+                                    cost_to_come = G.get_vertex_cost(u) + G.get_edge_cost(u, v)
+                                    G.set_vertex_cost(v, cost_to_come)
+                                    queue.append(v)
