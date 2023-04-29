@@ -20,8 +20,7 @@ from radius_computer import Radius_computer
 ALG_RRT = "rrt"
 ALG_PRM = "prm"
 ALG_PRM_STAR = "prm_star"
-ALG_RRT_STAR="rrt_star"
-
+ALG_RRT_STAR = "rrt_star"
 
 
 def parse_args():
@@ -39,7 +38,7 @@ def parse_args():
     )
     parser.add_argument(
         "--type",
-        choices=['k','r'],
+        choices=['k', 'r'],
         required=False,
         default='k',
         dest="type",
@@ -72,12 +71,14 @@ def main_rrt(
 
     plt.show()
 
+
 def main_rrt_star(
     cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, k_nearest
 ):
     """Task 1 (Exploring the C-space using RRT) and Task 2 (Solve the planning problem using RRT)"""
     fig, ax3 = plt.subplots()
-    title3 = "RRT planning"
+    approach = "K Nearest" if k_nearest else "Radius"
+    title3 = f"RRT Star planning with {approach}"
     (G3, root3, goal3) = rrt_star(
         cspace=cspace,
         qI=qI,
@@ -89,11 +90,12 @@ def main_rrt_star(
         k_nearest=k_nearest,
     )
     path = []
-    # if goal3 is not None:
-        # path = G3.get_path(root3, goal3)
+    if goal3 is not None:
+        path = G3.get_path(root3, goal3)
     draw(ax3, cspace, obs_boundaries, qI, qG, G3, path, title3)
 
     plt.show()
+
 
 def main_prm(
     cspace, qI, qG, edge_creator, distance_computator, collision_checker, obs_boundaries,
@@ -115,12 +117,14 @@ def main_prm(
     draw(ax, cspace, obs_boundaries, qI, qG, G, path, title)
     plt.show()
 
+
 def main_prm_star(
     cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, obs_boundaries, k_nearest_prm_star
 ):
     """Task 3 (Solve the planning problem using PRM)"""
     fig, ax = plt.subplots()
-    title = "PRM planning"
+    approach = "K Nearest" if k_nearest else "Radius"
+    title = f"PRM Star planning with {approach}"
     (G, root, goal) = prm_star(
         cspace=cspace,
         qI=qI,
@@ -138,13 +142,14 @@ def main_prm_star(
     draw(ax, cspace, obs_boundaries, qI, qG, G, path, title)
     plt.show()
 
+
 if __name__ == "__main__":
     # python hw4.py --alg rrt
-    sys.argv = [os.path.basename(__file__), '--alg', 'rrt_star', '--type', 'k']
+    # sys.argv = [os.path.basename(__file__), '--alg', 'rrt_star', '--type', 'k']
 
-    cspace = [(-3, 3), (-1, 1)]
-    qI = (-2, -0.5)
-    qG = (2, -0.5)
+    cspace = [(-4, 4), (-2, 2)]
+    qI = (-3, -0.5)
+    qG = (3, 1)
     obstacles = construct_circular_obstacles(0.6)
     obs_boundaries = [obstacle.get_boundaries() for obstacle in obstacles]
 
@@ -162,13 +167,17 @@ if __name__ == "__main__":
     radius_computer = Radius_computer(cspace=cspace, raidus=0.98)
 
     args = parse_args()
-    k_nearest= True if args.type=='k' else False
+    k_nearest = True if args.type == 'k' else False
 
     if args.alg == ALG_RRT:
-        main_rrt(cspace,qI,qG,edge_creator,distance_computator,collision_checker,)
-    elif args.alg==ALG_PRM_STAR:
-        main_prm_star(cspace,qI,qG,edge_creator,distance_computator,collision_checker,radius_computer,obs_boundaries,k_nearest,)
-    elif args.alg==ALG_RRT_STAR:
-        main_rrt_star(cspace,qI,qG,edge_creator,distance_computator,collision_checker,radius_computer,k_nearest,)
+        main_rrt(cspace, qI, qG, edge_creator,
+                 distance_computator, collision_checker,)
+    elif args.alg == ALG_PRM_STAR:
+        main_prm_star(cspace, qI, qG, edge_creator, distance_computator,
+                      collision_checker, radius_computer, obs_boundaries, k_nearest,)
+    elif args.alg == ALG_RRT_STAR:
+        main_rrt_star(cspace, qI, qG, edge_creator, distance_computator,
+                      collision_checker, radius_computer, k_nearest,)
     else:
-        main_prm(cspace,qI,qG,edge_creator,distance_computator,collision_checker,obs_boundaries,)
+        main_prm(cspace, qI, qG, edge_creator, distance_computator,
+                 collision_checker, obs_boundaries,)
