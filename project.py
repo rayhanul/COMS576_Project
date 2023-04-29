@@ -169,6 +169,6 @@ if __name__ == "__main__":
     elif args.alg==ALG_PRM_STAR:
         main_prm_star(cspace,qI,qG,edge_creator,distance_computator,collision_checker,radius_computer,obs_boundaries,k_nearest,)
     elif args.alg==ALG_RRT_STAR:
-        main_rrt(cspace,qI,qG,edge_creator,distance_computator,collision_checker,radius_computer,k_nearest,)
+        main_rrt_star(cspace,qI,qG,edge_creator,distance_computator,collision_checker,radius_computer,k_nearest,)
     else:
         main_prm(cspace,qI,qG,edge_creator,distance_computator,collision_checker,obs_boundaries,)
