@@ -1,6 +1,7 @@
 
 import numpy as np
 import math
+import matplotlib.pyplot as plt
 
 
 class Radius_computer:
@@ -51,14 +52,14 @@ class Radius_computer:
 
         gamma_prm_star=self.get_gamma_prm(mu_x_free, xi_d, d)
         gamma_prm=gamma_prm_star+0.1
-        if number_vertices==0:
-            return 0
+        if number_vertices <= 1:
+            return gamma_prm
         return gamma_prm * (math.log(number_vertices) / number_vertices) ** (1 / d)
 
     def get_dynamic_k_nearest_val(self, number_vertices, e=2.71828, d=2):
         k_rrg_optimal =  2 * e 
         if number_vertices == 0:
-            return 0
+            return math.ceil(k_rrg_optimal)
         k=math.ceil(k_rrg_optimal * math.log(number_vertices))
         return k 
     
@@ -66,3 +67,35 @@ class Radius_computer:
         variable_radius=self.get_prm_star_radius(cardinality)
         return min(variable_radius, eta)
 
+
+# if __name__=="__main__":
+#     cspace = [(-4, 4), (-2, 2)]
+#     radius=2.5
+#     r=Radius_computer(cspace=cspace, radius=radius)
+
+#     arr=[]
+#     for i in range(0,10000):
+#         rad=r.get_prm_star_radius(i)
+#         arr.append(rad)
+#         # if i%100==0:
+#         #     print(f'i: {i}, and radius: {rad}')
+#     x=[i for i in range(0,10000)]      
+#     plt.plot(x, arr)  
+    
+#     # plt.title('')
+#     plt.xlabel('Number of samples')
+#     plt.ylabel('radius value')
+#     plt.show()
+#     arr=[]
+#     for i in range(0,10000):
+#         k=r.get_dynamic_k_nearest_val(i)
+#         arr.append(k)
+
+#         if i%100==0:
+#             print(f'i: {i}, and k value: {rad}')
+
+#     x=[i for i in range(0,10000)]      
+#     plt.plot(x, arr)  
+#     plt.xlabel('Number of samples')
+#     plt.ylabel('k-nearest value')
+#     plt.show()
