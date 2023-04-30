@@ -147,12 +147,12 @@ def main_prm_star(
 
 if __name__ == "__main__":
     # python hw4.py --alg rrt
-    sys.argv = [os.path.basename(__file__), '--alg', 'rrt_star', '--type', 'k']
+    sys.argv = [os.path.basename(__file__), '--alg', 'rrt', '--type', 'r']
 
     cspace = [(-4, 4), (-2, 2)]
     qI = (-3, -0.5)
     qG = (3, 1)
-    obstacles = construct_circular_obstacles(0.6)
+    obstacles = construct_circular_obstacles(0.5)
     obs_boundaries = [obstacle.get_boundaries() for obstacle in obstacles]
 
     # We don't really need to explicitly need to check the world boundary
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     edge_creator = StraightEdgeCreator(0.1)
     collision_checker = ObstacleCollisionChecker(obstacles)
     distance_computator = EuclideanDistanceComputator()
-    radius_computer = Radius_computer(cspace=cspace, raidus=0.98)
+    radius_computer = Radius_computer(cspace=cspace, radius=0.5)
 
     args = parse_args()
     k_nearest = True if args.type == 'k' else False

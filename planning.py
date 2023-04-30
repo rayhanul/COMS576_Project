@@ -144,85 +144,73 @@ def rrt(
     return (G, root, None)
 
 
-def rrt_star(
-    cspace,
-    qI,
-    qG,
-    edge_creator,
-    distance_computator,
-    collision_checker,
-    radius_computer,
-    k_nearest=False,
-    eta=2.5,
-    pG=0.1,
-    numIt=100,
-    tol=1e-3,
-):
-    def rewire(G, vs, distance_computator, edge_creator, collision_checker, radius_computer, k_nearest, eta):
-        qs = G.get_vertex_state(vs)
-        if k_nearest:
-            k = radius_computer.get_dynamic_k_nearest_val(len(G.vertices), 0.5)
-            vertices = G.get_nearest_vertices(qs, k, distance_computator)
-        else:
-            radius = radius_computer.get_radius_RRT_star(len(G.vertices), eta)
-            #  here eta is a user defined constant defined by user...
-            vertices = G.near(alpha, radius, distance_computator)
+def rrt_star(cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, k_nearest, numIt=100, tol=1e-3, eta=2.5, pG=0.1):
+    """RRT* with obstacles
 
-        for vn in vertices:
-            if vn != vs:
-                qn = G.get_vertex_state(vn)
-                (qe, edge) = stopping_configuration(
-                    qs, qn, edge_creator, collision_checker, tol
-                )
-                if qe is not None and get_euclidean_distance(qn, qe) < tol:
-                    cost_to_come = G.get_vertex_cost(vs) + edge.get_cost()
-                    print("The cost of edge ", edge.get_cost())
-                    print("vertex number", vs, vn)
-                    print("vertex cost", G.get_vertex_cost(vs))
-                    if cost_to_come < G.get_vertex_cost(vn):
-                        G.set_parent(vs, vn, edge)
-                        G.set_vertex_cost(vn, cost_to_come)
+    @type cspace: a list of tuples (smin, smax) indicating that the C-space
+        is given by the product of the tuples.
+    @type qI: a tuple (x, y) indicating the initial configuration.
+    @type qG: a tuple (x, y) indicating the goal configuration.
+    @type edge_creator: an EdgeCreator object that includes the make_edge(s1, s2) function,
+        which returns an Edge object beginning at state s1 and ending at state s2.
+    @type distance_computator: a DistanceComputator object that includes the get_distance(s1, s2)
+        function, which returns the distance between s1 and s2.
+    @type collision_checker: a CollisionChecker object that includes the is_in_collision(s)
+        function, which returns whether the state s is in collision.
+    @type radius: a float indicating the search radius for near vertices.
+    @type numIt: an integer indicating the maximum number of iterations.
+    @type tol: a float, indicating the tolerance on the euclidean distance when checking whether
+        2 states are the same
 
-                        # Update cost-to-come of all children of vn
-
-                        queue = [vn]
-                        while queue:
-                            u = queue.pop(0)
-                            for v in G.parents.keys():
-                                if u in G.parents[v]:
-                                    cost_to_come = G.get_vertex_cost(
-                                        u) + G.get_edge_cost(u, v)
-                                    G.set_vertex_cost(v, cost_to_come)
-                                    queue.append(v)
-
+    @return (G, root, goal) where G is the tree, root is the id of the root vertex
+        and goal is the id of the goal vertex (if one exists in the tree; otherwise goal will be None).
+    """
     G = Tree()
     root = G.add_vertex(np.array(qI))
-    G.set_vertex_cost(root, 0)
+    G.set_vertex_cost(root, 0.0)
+    goal_id = None
+
     for i in range(numIt):
+
         use_goal = qG is not None and random.uniform(0, 1) <= pG
         if use_goal:
             alpha = np.array(qG)
         else:
             alpha = sample(cspace)
-        vn = G.get_nearest(alpha, distance_computator, tol)
+        vn = G.get_nearest_vertex(alpha, distance_computator)
         qn = G.get_vertex_state(vn)
         (qs, edge) = stopping_configuration(
-            qn, alpha, edge_creator, collision_checker, tol
-        )
+            qn, alpha, edge_creator, collision_checker, tol)
         if qs is None or edge is None:
             continue
         dist = get_euclidean_distance(qn, qs)
         if dist > tol:
             vs = G.add_vertex(qs)
-            # print("vs", vs)
-            G.add_edge(vn, vs, edge)
             G.set_vertex_cost(vs, G.get_vertex_cost(vn) + edge.get_cost())
-            rewire(G, vs, distance_computator,
-                   edge_creator, collision_checker, radius_computer, k_nearest, eta)
-            if use_goal and get_euclidean_distance(qs, qG) < tol:
-                return (G, root, vs)
+            G.add_edge(vn, vs, edge)
+            radius = radius_computer.get_radius_RRT_star(len(G.vertices), eta)
+            near_vertices = G.sorted_near(qs, radius, distance_computator)
 
-    return (G, root, None)
+            for near_id in near_vertices:
+                if near_id != vs and near_id != vn:
+                    q_near = G.get_vertex_state(near_id)
+                    (qs_to_near, edge_to_near) = stopping_configuration(
+                        qs, q_near, edge_creator, collision_checker, tol)
+
+                    if qs_to_near is not None and edge_to_near is not None:
+                        dist_near = get_euclidean_distance(qs, qs_to_near)
+                        if dist_near <= tol:
+                            cost_near = G.get_vertex_cost(
+                                near_id) + edge_to_near.get_cost()
+                            if cost_near < G.get_vertex_cost(vs):
+                                G.set_parent(near_id, vs, edge_to_near)
+                                G.set_vertex_cost(vs, cost_near)
+
+            if get_euclidean_distance(qs, qG) < tol:
+                if goal_id is None or G.get_vertex_cost(vs) < G.get_vertex_cost(goal_id):
+                    goal_id = vs
+
+    return (G, root, goal_id)
 
 
 def prm_star(
