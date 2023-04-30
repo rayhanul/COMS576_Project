@@ -99,7 +99,7 @@ class Graph:
                 nearest_t = tstar
 
         return (nearest_edge, nearest_t)
-    
+
     def near(self, state, radius, distance_computator):
         dist_vertices = []
         for vertex, s in self.vertices.items():
@@ -300,6 +300,25 @@ class Tree(Graph):
         if vid not in self.vertex_costs:
             return 0.0
         return self.vertex_costs[vid]
+
+    def sorted_near(self, q, radius, distance_computator):
+        """
+        Get vertices sorted by distance within the radius around the given state.
+
+        @type q: tuple (x, y)
+        @type radius: float
+        @type distance_computator: a DistanceComputator object that includes the get_distance(s1, s2)
+        function, which returns the distance between s1 and s2.
+        @return: a list of vertex ids sorted by distance from the given state
+        """
+        near_vertices = []
+        for vertex_id, vertex_state in self.vertices.items():
+            distance = distance_computator.get_distance(q, vertex_state)
+            if distance <= radius:
+                near_vertices.append((vertex_id, distance))
+
+        near_vertices.sort(key=lambda x: x[1])
+        return [vertex_id for vertex_id, _ in near_vertices]
 
 
 class GraphCC(Graph):
