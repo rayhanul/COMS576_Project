@@ -17,7 +17,7 @@ class Radius_computer:
         return x_range * y_range
 
     def half_circle_area(self):
-        return math.pi * self.obstacle_radius**7
+        return math.pi * self.obstacle_radius**10
     
     def get_mu_x_free(self):
         return self.cspace_area() - self.half_circle_area()

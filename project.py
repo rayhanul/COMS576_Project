@@ -89,8 +89,6 @@ def main_rrt_star(
         radius_computer=radius_computer,
         k_nearest=k_nearest,
     )
-    for key, val in G3.edges.items():
-        print(f'edge: {key}, cost: {val}')
     path = []
     if goal3 is not None:
         path = G3.get_path(root3, goal3)
@@ -147,10 +145,10 @@ def main_prm_star(
 
 if __name__ == "__main__":
     # python hw4.py --alg rrt
-    sys.argv = [os.path.basename(__file__), '--alg', 'rrt', '--type', 'r']
+    # sys.argv = [os.path.basename(__file__), '--alg', 'rrt', '--type', 'r']
 
     cspace = [(-4, 4), (-2, 2)]
-    qI = (-3, -0.5)
+    qI = (-3.5, -1.75)
     qG = (3, 1)
     obstacles = construct_circular_obstacles(0.5)
     obs_boundaries = [obstacle.get_boundaries() for obstacle in obstacles]
