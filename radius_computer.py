@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 
 class Radius_computer:
 
-    def __init__(self, cspace, raidus) -> None:
+    def __init__(self, cspace, radius=0.5) -> None:
         self.cspace=cspace
-        self.obstacle_radius = raidus
+        self.obstacle_radius = radius
 
     def cspace_area(self):
         x_range = self.cspace[0][1] - self.cspace[0][0]
@@ -17,7 +17,7 @@ class Radius_computer:
         return x_range * y_range
 
     def half_circle_area(self):
-        return 0.5 * math.pi * self.obstacle_radius**2
+        return math.pi * self.obstacle_radius**7
     
     def get_mu_x_free(self):
         return self.cspace_area() - self.half_circle_area()
