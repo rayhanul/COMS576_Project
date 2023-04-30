@@ -172,7 +172,13 @@ def rrt_star(
         for each_child in child_lst:
             old_child_cost=G.get_vertex_cost(each_child)
             cost = old_cost- old_child_cost + new_cost
-            G.set_vertex_cost(each_child, cost)
+            start_state = G.get_vertex_state(child)
+            end_state=G.get_vertex_state(each_child)
+
+            cost_state_end=get_euclidean_distance(start_state, end_state)
+            total_cost=cost_state_end + G.get_vertex_cost(child)
+            G.set_vertex_cost(each_child, total_cost)
+            print(f'cost of vertex {each_child} : {cost}')
             update_child_cost(Graph, each_child, cost, old_child_cost)
 
 
@@ -196,7 +202,10 @@ def rrt_star(
         #             cost_vs_vn= G.get_vertex_cost(vs) + edge.get_cost()
         #             if cost_vs_vn < G.get_vertex_cost(vn):
         #                     old_cost= G.get_vertex_cost(vn)
-        #                     G.set_parent(vn, vs, edge)
+        #                     parent_vn=G.parents[vn]
+        #                     G.remove_edge((parent_vn[0], vn))
+                              # it should be vs, vn
+        #                     G.set_parent(vs, vn, edge)
         #                     G.set_vertex_cost(vn, cost_vs_vn)
         #                     update_child_cost( G, vn, edge.get_cost(), old_cost)
 
@@ -210,6 +219,7 @@ def rrt_star(
                     if cost_to_come < G.get_vertex_cost(vn):
                         G.set_parent(vn, vs, edge)
                         G.set_vertex_cost(vn, cost_to_come)
+                        print(f'cost of vertex {vn}={G.get_vertex_state(vn)} : {cost_to_come}')
                         # Update cost-to-come of all children of vn
                         queue = [vn]
                         while queue:
@@ -218,6 +228,7 @@ def rrt_star(
                                 if u in G.parents[v]:
                                     cost_to_come = G.get_vertex_cost(u) + G.get_edge_cost(u, v)
                                     G.set_vertex_cost(v, cost_to_come)
+                                    print(f'cost of vertex {v}={G.get_vertex_state(v)} : {cost_to_come}')
                                     queue.append(v)
     print("inside rrt_star")
     G = Tree()
@@ -240,7 +251,7 @@ def rrt_star(
             G.add_edge(vn, vs, edge)
             new_vertex_cost=G.get_vertex_cost(vn) + edge.get_cost()
             G.set_vertex_cost(vs, new_vertex_cost)
-            print(f'cost of vertex {vs} : {new_vertex_cost}')
+            print(f'cost of vertex {vs}={G.get_vertex_state(vs)} : {new_vertex_cost}')
             rewire(G, vs, distance_computator, edge_creator, collision_checker, radius_computer, k_nearest, eta)
             if use_goal and get_euclidean_distance(qs, qG) < tol:
                 return (G, root, vs)
