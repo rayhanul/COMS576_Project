@@ -68,6 +68,8 @@ def main_rrt(
     path = []
     if goal3 is not None:
         path = G3.get_path(root3, goal3)
+    print("goal3", goal3)
+    print("path", path)
     draw(ax3, cspace, obs_boundaries, qI, qG, G3, path, title3)
 
     plt.show()
@@ -184,4 +186,4 @@ if __name__ == "__main__":
                  collision_checker, obs_boundaries,)
     Plotting = Plotter(cspace, qI, qG, edge_creator, distance_computator,
                        collision_checker, radius_computer, obs_boundaries, k_nearest)
-    Plotting.time_cost_analysis()
+    # Plotting.time_cost_analysis()

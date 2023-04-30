@@ -33,8 +33,9 @@ class Plotter:
         for i in range(len(path) - 1):
             node1 = path[i]
             node2 = path[i + 1]
-            edge = tree.get_edge(node1, node2)
-            total_cost += edge.cost()
+            edge = tree.get_edge_cost(node1, node2)
+            total_cost += edge
+            print("edge cost ", edge)
 
         return total_cost
 
@@ -67,30 +68,33 @@ class Plotter:
         prm_star_costs = []
 
         # Run each algorithm multiple times and record the times and costs
-        for i in range(10):
-            # RRT
-            start_time = time.time()
-            (G1, root1, goal1) = rrt(
-                cspace,
-                qI,
-                qG,
-                self.edge_creator,
-                self.distance_computator,
-                self.collision_checker,
+        for i in range(1):
+            # # RRT
+            # start_time = time.time()
+            # (G1, root1, goal1) = rrt(
+            #     cspace=self.cspace,
+            #     qI=self.qI,
+            #     qG=self.qG,
+            #     edge_creator=self.edge_creator,
+            #     distance_computator=self.distance_computator,
+            #     collision_checker=self.collision_checker,
 
-            )
-            end_time = time.time()
-            rrt_times.append(end_time - start_time)
-            rrt_cost = G1.get_path_cost(
-                self.qI, self.qG, self.distance_computator)
-            print("rrt cost", rrt_cost)
+            # )
 
-            path1 = []
-            if root1 is not None and goal1 is not None:
-                path = G1.get_path(root1, goal1)
-            rrt_cost = self.get_path_cost(G1, path1)
+            # vertex_set_to_goal = []
+            # if goal1 is not None:
+            #     vertex_set_to_goal = G1.get_vertices_path_to_goal(root1, goal1)
+            # print("goal3", vertex_set_to_goal)
+            # print("path", vertex_set_to_goal)
+            # end_time = time.time()
+            # rrt_times.append(end_time - start_time)
+            # # rrt_cost = G1.get_path_cost(
+            # #     self.qI, self.qG, self.distance_computator)
+            # # print("rrt cost", rrt_cost)
 
-            rrt_costs.append(rrt_cost)
+            # rrt_cost = self.get_path_cost(G1, vertex_set_to_goal)
+
+            # rrt_costs.append(rrt_cost)
 
             # RRT*
             start_time = time.time()
@@ -107,61 +111,64 @@ class Plotter:
             end_time = time.time()
             rrt_star_times.append(end_time - start_time)
 
-            path2 = []
-            if root2 is not None and goal2 is not None:
-                path = G2.get_path(root2, goal2)
-            rrtstar_cost = self.get_path_cost(G2, path2)
-            rrt_costs.append(rrtstar_cost)
+            vertex_set_to_goal = []
+            if goal2 is not None:
+                vertex_set_to_goal = G2.get_vertices_path_to_goal(root2, goal2)
+            print("goal3", vertex_set_to_goal)
+            print("path", vertex_set_to_goal)
+            rrt_star_cost = self.get_path_cost(G2, vertex_set_to_goal)
 
-            # PRM
-            start_time = time.time()
-            (G3, root3, goal3) = prm(
-                cspace,
-                qI,
-                qG,
-                self.edge_creator,
-                self.distance_computator,
-                self.collision_checker,
-            )
-            end_time = time.time()
-            prm_times.append(end_time - start_time)
-            prm_costs.append(G3.get_path_cost(
-                self.qI, self.qG, self.distance_computator))
+            rrt_costs.append(rrt_star_cost)
 
-            # PRM*
-            start_time = time.time()
-            (G4, root4, goal4) = prm_star(
-                self.cspace,
-                self.qI,
-                self.qG,
-                self.edge_creator,
-                self.distance_computator,
-                self.collision_checker,
-                self.radius_computer,
-                self.obs_boundaries,
-                self.k_nearest_prm_star
-            )
-            end_time = time.time()
-            prm_star_times.append(end_time - start_time)
-            prm_star_costs.append(G4.get_path_cost(
-                self.qI, self.qG, self.distance_computator))
+            # # PRM
+            # start_time = time.time()
+            # (G3, root3, goal3) = prm(
+            #     cspace,
+            #     qI,
+            #     qG,
+            #     self.edge_creator,
+            #     self.distance_computator,
+            #     self.collision_checker,
+            # )
+            # end_time = time.time()
+            # prm_times.append(end_time - start_time)
+            # prm_costs.append(G3.get_path_cost(
+            #     self.qI, self.qG, self.distance_computator))
+
+            # # PRM*
+            # start_time = time.time()
+            # (G4, root4, goal4) = prm_star(
+            #     self.cspace,
+            #     self.qI,
+            #     self.qG,
+            #     self.edge_creator,
+            #     self.distance_computator,
+            #     self.collision_checker,
+            #     self.radius_computer,
+            #     self.obs_boundaries,
+            #     self.k_nearest_prm_star
+            # )
+            # end_time = time.time()
+            # prm_star_times.append(end_time - start_time)
+            # prm_star_costs.append(G4.get_path_cost(
+            #     self.qI, self.qG, self.distance_computator))
 
         # Print out the average times and costs for each algorithm
-        print("RRT:")
-        print("Average time:", np.mean(rrt_times))
-        print("Average cost:", np.mean(rrt_costs))
-        print("")
+        # print("RRT:")
+        # print("Average time:", np.mean(rrt_times))
+        # print("Average cost:", np.mean(rrt_costs))
+        # print("")
 
         print("RRT*:")
         print("Average time:", np.mean(rrt_star_times))
         print("Average cost:", np.mean(rrt_star_costs))
         print("")
 
-        print("PRM:")
-        print("Average time:", np.mean(prm_times))
-        print("Average cost:", np.mean(prm_costs))
-        print("")
+        # print("PRM:")
+        # print("Average time:", np.mean(prm_times))
+        # print("Average cost:", np.mean(prm_costs))
+        # print("")
 
-        print("PRM*:")
-        print("Average time:", np.mean(prm_star_times))
-        print("Average cost:", np.mean(prm_star_costs))
+        # print("PRM*:")
+        # print("Average time:", np.mean(prm_star_times))
+        # print("Average cost:", np.mean(prm_star_costs))
