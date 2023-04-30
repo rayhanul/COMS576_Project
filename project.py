@@ -16,6 +16,7 @@ from obstacle import construct_circular_obstacles, WorldBoundary2D
 from draw_cspace import draw
 
 from radius_computer import Radius_computer
+from plotter import Plotter
 
 ALG_RRT = "rrt"
 ALG_PRM = "prm"
@@ -181,3 +182,6 @@ if __name__ == "__main__":
     else:
         main_prm(cspace, qI, qG, edge_creator, distance_computator,
                  collision_checker, obs_boundaries,)
+    Plotting = Plotter(cspace, qI, qG, edge_creator, distance_computator,
+                       collision_checker, radius_computer, obs_boundaries, k_nearest)
+    Plotting.time_cost_analysis()
