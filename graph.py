@@ -236,44 +236,19 @@ class Graph:
                 s1 = s2
                 s2 = edge.get_discretized_state(s2_ind)
 
-    def get_path_cost(self, qI, qG, distance_computator):
-        """Return the cost of the shortest path between qI and qG"""
-        class CostEstimator:
-            """Cost estimator for Dijkstra's algorithm"""
+    def get_path_cost(self, vertex_path):
+        """Calculate the total cost of the path from the root vertex to the end vertex"""
 
-            def get_lower_bound(self, v):
-                """Return the cost-to-come of vertex v"""
-                return self.vertex_costs[v]
+        total_cost = 0
+        if len(vertex_path) < 2:
+            return total_cost
 
-        # Initialize the cost-to-come of all vertices to infinity
-        self.vertex_costs = {v: float("inf") for v in self.vertices}
+        for i in range(len(vertex_path) - 1):
+            edge_id = (vertex_path[i], vertex_path[i + 1])
+            edge_cost = self.edges[edge_id][0]
+            total_cost += edge_cost
 
-        # Initialize the cost-to-come of the initial vertex to 0
-        v0 = self.get_nearest_vertex(qI, distance_computator)
-        self.vertex_costs[v0] = 0
-
-        # Initialize the priority queue with the initial vertex
-        Q = []
-        heapq.heappush(Q, (0, v0))
-
-        # Run Dijkstra's algorithm to compute the shortest path
-        while len(Q) > 0:
-            cost, v = heapq.heappop(Q)
-
-            # If we've reached the goal vertex, return the cost-to-come
-            if (self.get_vertex_state(v) == qG).any():
-                return cost
-
-            # Relax all outgoing edges from v
-            for u in self.parents[v]:
-                edge_cost = self.edges[(u, v)][0]
-                new_cost = self.vertex_costs[v] + edge_cost
-                if new_cost < self.vertex_costs[u]:
-                    self.vertex_costs[u] = new_cost
-                    heapq.heappush(Q, (new_cost, u))
-
-        # If there's no path from qI to qG, return infinity
-        return float("inf")
+        return total_cost
 
 
 class Tree(Graph):

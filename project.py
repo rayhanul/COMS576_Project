@@ -68,8 +68,7 @@ def main_rrt(
     path = []
     if goal3 is not None:
         path = G3.get_path(root3, goal3)
-    print("goal3", goal3)
-    print("path", path)
+    print(len(G3.vertices))
     draw(ax3, cspace, obs_boundaries, qI, qG, G3, path, title3)
 
     plt.show()
@@ -95,6 +94,8 @@ def main_rrt_star(
     path = []
     if goal3 is not None:
         path = G3.get_path(root3, goal3)
+
+    print(len(G3.vertices))
     draw(ax3, cspace, obs_boundaries, qI, qG, G3, path, title3)
 
     plt.show()
@@ -117,6 +118,7 @@ def main_prm(
     path = []
     if root is not None and goal is not None:
         path = G.get_path(root, goal)
+    print(len(G.vertices))
     draw(ax, cspace, obs_boundaries, qI, qG, G, path, title)
     plt.show()
 
@@ -142,6 +144,7 @@ def main_prm_star(
     path = []
     if root is not None and goal is not None:
         path = G.get_path(root, goal)
+    print(len(G.vertices))
     draw(ax, cspace, obs_boundaries, qI, qG, G, path, title)
     plt.show()
 
@@ -172,18 +175,22 @@ if __name__ == "__main__":
     args = parse_args()
     k_nearest = True if args.type == 'k' else False
 
-    if args.alg == ALG_RRT:
-        main_rrt(cspace, qI, qG, edge_creator,
-                 distance_computator, collision_checker,)
-    elif args.alg == ALG_PRM_STAR:
-        main_prm_star(cspace, qI, qG, edge_creator, distance_computator,
-                      collision_checker, radius_computer, obs_boundaries, k_nearest,)
-    elif args.alg == ALG_RRT_STAR:
-        main_rrt_star(cspace, qI, qG, edge_creator, distance_computator,
-                      collision_checker, radius_computer, k_nearest,)
-    else:
-        main_prm(cspace, qI, qG, edge_creator, distance_computator,
-                 collision_checker, obs_boundaries,)
+    # if args.alg == ALG_RRT:
+    #     main_rrt(cspace, qI, qG, edge_creator,
+    #              distance_computator, collision_checker,)
+    # elif args.alg == ALG_PRM_STAR:
+    #     main_prm_star(cspace, qI, qG, edge_creator, distance_computator,
+    #                   collision_checker, radius_computer, obs_boundaries, k_nearest,)
+    # elif args.alg == ALG_RRT_STAR:
+    #     main_rrt_star(cspace, qI, qG, edge_creator, distance_computator,
+    #                   collision_checker, radius_computer, k_nearest,)
+    # else:
+    #     main_prm(cspace, qI, qG, edge_creator, distance_computator,
+    #              collision_checker, obs_boundaries,)
     Plotting = Plotter(cspace, qI, qG, edge_creator, distance_computator,
                        collision_checker, radius_computer, obs_boundaries, k_nearest)
     # Plotting.time_cost_analysis()
+    # Plotting.comparision_path_length()
+    # Plotting.comparision_k_R()
+    # Plotting.comparision_vertices()
+    Plotting.comparision_time()

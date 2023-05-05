@@ -95,7 +95,7 @@ def rrt(
     distance_computator,
     collision_checker,
     pG=0.1,
-    numIt=100,
+    numIt=300,
     tol=1e-3,
 ):
     """RRT with obstacles
@@ -144,7 +144,7 @@ def rrt(
     return (G, root, None)
 
 
-def rrt_star(cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, k_nearest, numIt=100, tol=1e-3, eta=2.5, pG=0.1):
+def rrt_star(cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, k_nearest=True, k=20, numIt=300, tol=1e-3, eta=2.5, pG=0.1):
     """RRT* with obstacles
 
     @type cspace: a list of tuples (smin, smax) indicating that the C-space
@@ -169,7 +169,7 @@ def rrt_star(cspace, qI, qG, edge_creator, distance_computator, collision_checke
     root = G.add_vertex(np.array(qI))
     G.set_vertex_cost(root, 0.0)
     goal_id = None
-
+    # print("k", k, k_nearest)
     for i in range(numIt):
 
         use_goal = qG is not None and random.uniform(0, 1) <= pG
@@ -188,8 +188,17 @@ def rrt_star(cspace, qI, qG, edge_creator, distance_computator, collision_checke
             vs = G.add_vertex(qs)
             G.set_vertex_cost(vs, G.get_vertex_cost(vn) + edge.get_cost())
             G.add_edge(vn, vs, edge)
-            radius = radius_computer.get_radius_RRT_star(len(G.vertices), eta)
-            near_vertices = G.sorted_near(qs, radius, distance_computator)
+
+            if k_nearest:
+                near_vertices = G.get_nearest_vertices(
+                    alpha, radius_computer.get_dynamic_k_nearest_val(len(G.vertices)), distance_computator, 1)
+                # near_vertices = G.get_nearest_vertices(
+                #     alpha, k, distance_computator, 1)
+            else:
+                radius = radius_computer.get_radius_RRT_star(
+                    len(G.vertices), eta)
+                near_vertices = G.sorted_near(qs, radius, distance_computator)
+                # near_vertices = G.sorted_near(qs, k, distance_computator)
 
             for near_id in near_vertices:
                 if near_id != vs and near_id != vn:
@@ -222,7 +231,8 @@ def prm_star(
     collision_checker,
     radius_computer,
     obs_boundaries,
-    k_nearest_prm_star=False,
+    k_nearest_prm_star=True,
+    k=20,
     numIt=1000,
     tol=1e-3,
     d=2,
@@ -254,10 +264,9 @@ def prm_star(
 
         if k_nearest_prm_star:
             neighbors = G.get_nearest_vertices(
-                alpha, radius_computer.get_dynamic_k_nearest_val(len(G.vertices)), distance_computator, 1)
+                alpha, k, distance_computator, 1)
         else:
-            neighbors = G.near(alpha, radius_computer.get_prm_star_radius(
-                len(G.vertices)), distance_computator)
+            neighbors = G.near(alpha, k, distance_computator)
         vs = G.add_vertex(alpha)
         for vn in neighbors:
             if G.is_same_component(vn, vs):

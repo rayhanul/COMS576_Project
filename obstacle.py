@@ -63,17 +63,31 @@ class WorldBoundary2D(Obstacle):
 #         obstacles.append(CircularObstacle(c[i], r, t[i]))
 #     return obstacles
 
-def construct_circular_obstacles(dt):
-    # r = 1 - dt  # the radius of the circle
+# def construct_circular_obstacles(dt):
+#     # r = 1 - dt  # the radius of the circle
+#     r = 1 - dt
+#     c = [(-1, -1), (1, -1), (2, 0), (-2, 0), (-3, 1),
+#          (1.5, 1), (0, 0), (-1, 1), (3, -1), (-3,-1)]  # the center of each circle
+#     # c = [()]
+#     # t = [(0, math.pi), (-math.pi, 0)]  # range of theta of each circle
+#     t = [(-math.pi, math.pi), (-math.pi, math.pi),
+#          (-math.pi, math.pi), (-math.pi, math.pi), (-math.pi, math.pi), (-math.pi, math.pi), (-math.pi, math.pi),
+#            (-math.pi, math.pi), (-math.pi, math.pi), (-math.pi, math.pi)]
+#     obstacles = []
+#     for i in range(len(c)):
+#         obstacles.append(CircularObstacle(c[i], r, t[i]))
+#     return obstacles
+
+
+def construct_circular_obstacles(dt, num_obstacles):
     r = 1 - dt
     c = [(-1, -1), (1, -1), (2, 0), (-2, 0), (-3, 1),
-         (1.5, 1), (0, 0), (-1, 1), (3, -1), (-3,-1)]  # the center of each circle
-    # c = [()]
-    # t = [(0, math.pi), (-math.pi, 0)]  # range of theta of each circle
+         (1.5, 1), (0, 0), (-1, 1), (3, -1), (-3, -1)]
     t = [(-math.pi, math.pi), (-math.pi, math.pi),
-         (-math.pi, math.pi), (-math.pi, math.pi), (-math.pi, math.pi), (-math.pi, math.pi), (-math.pi, math.pi),
-           (-math.pi, math.pi), (-math.pi, math.pi), (-math.pi, math.pi)]
+         (-math.pi, math.pi), (-math.pi, math.pi), (-math.pi,
+                                                    math.pi), (-math.pi, math.pi), (-math.pi, math.pi),
+         (-math.pi, math.pi), (-math.pi, math.pi), (-math.pi, math.pi)]
     obstacles = []
-    for i in range(len(c)):
+    for i in range(min(num_obstacles, len(c))):
         obstacles.append(CircularObstacle(c[i], r, t[i]))
     return obstacles
