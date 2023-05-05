@@ -260,6 +260,7 @@ def prm_star(
                 len(G.vertices)), distance_computator)
         vs = G.add_vertex(alpha)
         for vn in neighbors:
+            #no longer needed for PRM star
             # if G.is_same_component(vn, vs):
             #     continue
             qn = G.get_vertex_state(vn)
