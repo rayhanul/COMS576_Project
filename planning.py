@@ -144,7 +144,7 @@ def rrt(
     return (G, root, None)
 
 
-def rrt_star(cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, k_nearest, numIt=100, tol=1e-3, eta=2.5, pG=0.1):
+def rrt_star(cspace, qI, qG, edge_creator, distance_computator, collision_checker, radius_computer, k_nearest, numIt=500, tol=1e-3, eta=3, pG=0.1):
     """RRT* with obstacles
 
     @type cspace: a list of tuples (smin, smax) indicating that the C-space
@@ -223,7 +223,7 @@ def prm_star(
     radius_computer,
     obs_boundaries,
     k_nearest_prm_star=False,
-    numIt=1000,
+    numIt=200,
     tol=1e-3,
     d=2,
     gamma_prm=1.0
@@ -260,8 +260,8 @@ def prm_star(
                 len(G.vertices)), distance_computator)
         vs = G.add_vertex(alpha)
         for vn in neighbors:
-            if G.is_same_component(vn, vs):
-                continue
+            # if G.is_same_component(vn, vs):
+            #     continue
             qn = G.get_vertex_state(vn)
             if connect(alpha, qn, edge_creator, collision_checker, tol) and connect(
                 qn, alpha, edge_creator, collision_checker, tol

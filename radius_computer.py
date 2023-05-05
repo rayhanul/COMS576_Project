@@ -17,7 +17,7 @@ class Radius_computer:
         return x_range * y_range
 
     def half_circle_area(self):
-        return math.pi * self.obstacle_radius**10
+        return math.pi * self.obstacle_radius**2
     
     def get_mu_x_free(self):
         return self.cspace_area() - self.half_circle_area()
@@ -68,34 +68,35 @@ class Radius_computer:
         return min(variable_radius, eta)
 
 
+
 # if __name__=="__main__":
 #     cspace = [(-4, 4), (-2, 2)]
 #     radius=2.5
 #     r=Radius_computer(cspace=cspace, radius=radius)
 
 #     arr=[]
-#     for i in range(0,10000):
+#     for i in range(0,1000):
 #         rad=r.get_prm_star_radius(i)
 #         arr.append(rad)
 #         # if i%100==0:
 #         #     print(f'i: {i}, and radius: {rad}')
-#     x=[i for i in range(0,10000)]      
+#     x=[i for i in range(0,1000)]      
 #     plt.plot(x, arr)  
     
 #     # plt.title('')
-#     plt.xlabel('Number of samples')
-#     plt.ylabel('radius value')
+#     plt.xlabel('# of samples')
+#     plt.ylabel('Radius value')
 #     plt.show()
 #     arr=[]
-#     for i in range(0,10000):
+#     for i in range(0,1000):
 #         k=r.get_dynamic_k_nearest_val(i)
 #         arr.append(k)
 
 #         if i%100==0:
 #             print(f'i: {i}, and k value: {rad}')
 
-#     x=[i for i in range(0,10000)]      
+#     x=[i for i in range(0,1000)]      
 #     plt.plot(x, arr)  
-#     plt.xlabel('Number of samples')
+#     plt.xlabel('# of samples')
 #     plt.ylabel('k-nearest value')
 #     plt.show()

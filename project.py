@@ -68,8 +68,6 @@ def main_rrt(
     path = []
     if goal3 is not None:
         path = G3.get_path(root3, goal3)
-    print("goal3", goal3)
-    print("path", path)
     draw(ax3, cspace, obs_boundaries, qI, qG, G3, path, title3)
 
     plt.show()
@@ -147,9 +145,6 @@ def main_prm_star(
 
 
 if __name__ == "__main__":
-    # python hw4.py --alg rrt
-    # sys.argv = [os.path.basename(__file__), '--alg', 'rrt', '--type', 'r']
-
     cspace = [(-4, 4), (-2, 2)]
     qI = (-3.5, -1.75)
     qG = (3, 1)
